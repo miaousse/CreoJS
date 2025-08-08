@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creo Revision Manager</title>
+    <script src="./js/creojs.js"></script>
+    <script type="text/creojs" src="./js/browser.creojs"></script>
+    <script type="text/creojs" src="./js/modificationTable.creojs"></script>
+    <script type="text/creojs" src="./js/updateModificationTable.creojs"></script>
+    <script type="text/creojs" src="./js/parameterFunctions.creojs"></script>
+	
+    <link rel="stylesheet" href="./css/buttons.css">
+    <style>
+        #checker {
+            margin-top: 10px;
+            weight: bold;
+        }
+        input[type="text"] {
+            margin-right: 10px;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body onload="CreoJS.$ADD_ON_LOAD(initialize)">
+    <!-- <button onclick="refreshUI()">Refresh</button> -->
+    <!-- <button onclick="eraseModel()">Erase</button> -->
+    <div>
+        <input type="text" id="lastRevisionInput" placeholder="Entrer la description de la modification">
+        <button onclick="validateAndUpdate()">Update</button>
+        <!-- <button onclick="updateRevisionTable2()">Update2</button> -->
+    </div>
+    <div id="checker"></div>
+    <div id="userButtons"></div>
+    <script>
+        function initialize() {
+            try {
+				generateUserButtons();
+               
+            } catch (error) {
+                showMessage(`Initialization failed: ${error.message}`, "ERROR");
+            }
+        }
+
+        function showMessage(message, type = "INFO") {
+            const checker = document.getElementById("checker");
+            checker.textContent = message;
+            checker.style.color = type === "ERROR" ? "red" : "green";
+        }
+		
+		const plmUsers = {
+            'Jean-Raymond Civetta': 'JCA',
+            'Romain Ferrando': 'RFE',
+            'Benjamin Godfrin': 'BGN',
+            'Laurent Ibanez': 'LIB',
+            'Jean-Luc Pielawski': 'JPI',
+            'Jean-Baptiste Perrier': 'JPE',
+            'Semih Erberk': 'SEK',
+            'Bruno Laon': 'BLA'
+        };
+		
+		function generateUserButtons() {
+            const buttonContainer = document.getElementById('userButtons');
+            buttonContainer.innerHTML = "";
+            let first = true;
+            for (const [name, value] of Object.entries(plmUsers)) {
+                const card = document.createElement("div");
+                card.className = "radio-card";
+                const input = document.createElement("input");
+                input.type = "radio";
+                input.name = "plmUser";
+                input.value = value;
+                input.id = `radio-${value}`;
+                input.onchange = () => {
+                    try {
+                        CreoJS.updateChecker(value);
+                        //showMessage(`Checker set to ${name}`, "INFO");
+                    } catch (error) {
+                        //showMessage(`Failed to set checker: ${error.message}`, "ERROR");
+                    }
+                };
+                const label = document.createElement("label");
+                label.htmlFor = `radio-${value}`;
+                label.textContent = name;
+                card.appendChild(input);
+                card.appendChild(label);
+                buttonContainer.appendChild(card);
+                first = false;
+            }
+            if (Object.keys(plmUsers).length > 0) {
+                try {
+                    //CreoJS.updateChecker(Object.values(plmUsers)[0]);
+                } catch (error) {
+                    //showMessage(`Failed to set default checker: ${error.message}`, "ERROR");
+                }
+            }
+        }
+		
+    </script>
+</body>
+</html>

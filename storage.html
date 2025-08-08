@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <form id="itemForm">
+        <input type="text" id="desc" placeholder="Description" required>
+        <input type="text" id="number" placeholder="Number" required>
+        <button type="submit">Add Item</button>
+    </form>
+
+    <ul id="itemList">
+	</ul>
+
+    <button id="clearAll">Clear All Items</button>
+
+    <script>
+        const form = document.getElementById('itemForm');
+        const itemList = document.getElementById('itemList');
+        const clearAllButton = document.getElementById('clearAll');
+        let items = JSON.parse(localStorage.getItem('items')) || [];
+
+        function updateLocalStorage() {
+            localStorage.setItem('items', JSON.stringify(items));
+        }
+
+        function renderItems() {
+            itemList.innerHTML = '';
+            items.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <button onclick="removeItem(${index})">Remove</button>
+                    ${item.number} - ${item.desc}
+                `;
+                itemList.appendChild(li);
+            });
+            updateClearAllButtonVisibility();
+        }
+
+        function addItem(desc, number) {
+            items.push({ desc, number });
+            updateLocalStorage();
+            renderItems();
+        }
+
+        function removeItem(index) {
+            items.splice(index, 1);
+            updateLocalStorage();
+            renderItems();
+        }
+
+        function clearAllItems() {
+            items = [];
+            updateLocalStorage();
+            renderItems();
+        }
+
+        function updateClearAllButtonVisibility() {
+            if (items.length > 0) {
+                clearAllButton.style.display = 'block';
+            } else {
+                clearAllButton.style.display = 'none';
+            }
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const desc = document.getElementById('desc').value;
+            const number = document.getElementById('number').value;
+            addItem(desc, number);
+            form.reset();
+        });
+
+        clearAllButton.addEventListener('click', clearAllItems);
+
+        renderItems();
+    </script>
+</body>
+</html>

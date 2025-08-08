@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table</title>
+    <link rel="stylesheet" href="tables.css">
+    <link rel="stylesheet" href="inSessionTables.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        thead th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+        .modifiedModel {
+            background-color: #ffcccc;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Actions</th>
+                <th>Fichier</th>
+                <th>Rev</th>
+                <th>DS1/Répertoire</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+        </tbody>
+    </table>
+</body>
+</html>

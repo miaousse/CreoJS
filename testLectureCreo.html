@@ -1,0 +1,25 @@
+<html>
+	<head>
+		<title>Nomenclature</title>
+		<script
+			src="./js/creojs.js"
+		>
+		</script>
+		<script
+			type="text/creojs"
+			src="./js/browser.creojs"
+		>
+		</script>
+	</head>
+	<body onload="CreoJS.$ADD_ON_LOAD(initialize)">
+
+	<div id="toto"></div>
+	<script>
+		function initialize() {
+			CreoJS.$LOAD('testLectureCreo.txt', content => document.getElementById('toto').innerHTML =+ content);
+			const testContent = `fuck\ntest`;
+			CreoJS.$SAVE('jrMonTestEcriture.txt', testContent);
+		}
+	</script>
+</body>
+</html>

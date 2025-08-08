@@ -1,0 +1,37 @@
+<html>
+    <head>
+		<script src="./js/creojs.js"></script>
+		<script type="text/creojs" src="./js/browser.creojs"></script>
+		<script src="./js/myModels.js"></script>
+		<script type="text/creojs" src="./js/myModels.creojs"></script>
+		<!-- <script src="./js/myModels.creojs"></script> -->
+		<link rel="stylesheet" href="././css/buttons.css/currentModel../css/buttons.css">
+
+    </head>
+	<body onload="CreoJS.$ADD_ON_LOAD (initialize)">
+		<div class="info-container">
+			<nav class="navbar">
+				<div class="nav-buttons">
+					<button onclick="history.back()">Retour</button>
+					<button class="actionButton" onclick="window.location.href='activeModel.html'">Parametres modele</button>
+					<button class="actionButton" onclick="window.location.href='workingDirectories.html'">Choix repertoire</button>
+					<!-- <button class="actionButton" onclick="window.location.href='myModels.html'">Mes modeles</button> -->
+				</div>
+			</nav>
+			<div id="info">
+				<span id="action"></span>
+			</div>
+			<div class="info-item">
+				<strong class="info-title">Modeles:</strong>
+				<span id="models"></span>
+				<script>createModelsList();</script>
+			</div>
+		</div>
+
+        <script>
+            function initialize () {
+            }
+				
+		</script>
+    </body>
+</html>

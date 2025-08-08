@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ma To-Do List</title>
+  <link rel="stylesheet" href="./css/colorsVariables.css">
+  <link rel="stylesheet" href="./css/button.css">
+  <link rel="stylesheet" href="./css/general.css">
+  <link rel="stylesheet" href="./css/notepad.css">
+  <!-- general../css/buttons.css Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/general../css/buttons.css-awesome/6.2.0/./css/buttons.css/all.min../css/buttons.css">
+  <style>
+    /* Styles spécifiques pour la table des tâches */
+    .todo-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .todo-table th, .todo-table td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    .todo-table th {
+      background-color: #f2f2f2;
+    }
+    .actions-cell {
+      display: flex;
+      gap: 5px;
+    }
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      general../css/buttons.css-size: 1em;
+      padding: 0;
+      color: #555;
+    }
+    .icon-btn.done {
+      color: green;
+    }
+    .icon-btn.edit {
+      color: blue;
+    }
+    .done-task {
+      text-decoration: line-through;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ma To-Do List</h1>
+    <input type="text" id="title-input" placeholder="Titre de la tâche">
+    <textarea id="note-input" placeholder="Détails de la tâche" rows="5" cols="33" autofocus ></textarea>
+    <div class="note-actions">
+      <button id="save-note" class="actionButton">Sauver Note</button>
+    </div>
+    <h2>Tâches:</h2>
+    <table class="todo-table">
+      <thead>
+        <tr>
+          <th>Actions</th>
+          <th>Tâche</th>
+        </tr>
+      </thead>
+      <tbody id="tasks-list">
+        <!-- Tasks will be dynamically added here -->
+      </tbody>
+    </table>
+  </div>
+  <script src="./js/notepad.js"></script>
+  <script>
+    // Add this snippet to notepad.js or embed it here
+    document.addEventListener('DOMContentLoaded', function() {
+      const tasksList = document.getElementById('tasks-list');
+      const saveNoteButton = document.getElementById('save-note');
+      const titleInput = document.getElementById('title-input');
+      const noteInput = document.getElementById('note-input');
+      let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      let editingIndex = null;
+
+      function renderTasks() {
+        tasksList.innerHTML = '';
+        tasks.forEach((task, index) => {
+          const tr = document.createElement('tr');
+
+          // Actions cell
+          const actionsTd = document.createElement('td');
+          actionsTd.className = 'actions-cell';
+
+          const doneBtn = document.createElement('button');
+          doneBtn.className = 'icon-btn done';
+          doneBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+          doneBtn.onclick = () => toggleDone(index);
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'icon-btn edit';
+          editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+          editBtn.onclick = () => editTask(index);
+
+          actionsTd.appendChild(doneBtn);
+          actionsTd.appendChild(editBtn);
+
+          // Task text cell
+          const taskTd = document.createElement('td');
+          taskTd.textContent = task.title + ' - ' + task.content;
+          if (task.done) taskTd.classList.add('done-task');
+
+          tr.appendChild(actionsTd);
+          tr.appendChild(taskTd);
+          tasksList.appendChild(tr);
+        });
+      }
+
+      function toggleDone(index) {
+        tasks[index].done = !tasks[index].done;
+        saveTasks();
+        renderTasks();
+      }
+
+      function editTask(index) {
+        titleInput.value = tasks[index].title;
+        noteInput.value = tasks[index].content;
+        editingIndex = index;
+        saveNoteButton.textContent = 'Modifier';
+      }
+
+      function saveTasks() {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+      }
+
+      saveNoteButton.onclick = function() {
+        const title = titleInput.value.trim();
+        const content = noteInput.value.trim();
+        if (!title || !content) return;
+
+        if (editingIndex !== null) {
+          tasks[editingIndex] = { title, content, done: tasks[editingIndex].done };
+          editingIndex = null;
+          saveNoteButton.textContent = 'Sauver Note';
+        } else {
+          tasks.push({ title, content, done: false });
+        }
+
+        titleInput.value = '';
+        noteInput.value = '';
+        saveTasks();
+        renderTasks();
+      };
+
+      renderTasks();
+    });
+  </script>
+</body>
+</html>

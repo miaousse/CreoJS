@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>External SVG Color Invert on Hover</title>
+  <style>
+    object {
+      display: block;
+      width: 24px;
+      height: 24px;
+      background-color: transparent;
+    }
+    object svg path {
+      fill: #005496; /* Matches original, optional */
+    }
+    object:hover {
+      background-color: #005496; /* Blue background on hover */
+    }
+    object:hover svg path {
+      fill: none; /* Transparent shape on hover */
+      stroke: none; /* No stroke */
+    }
+  </style>
+</head>
+<body>
+  <object type="image/svg+xml" data="./assets/edit.svg" width="24" height="24">
+    Your browser does not support SVG.
+  </object>
+</body>
+</html>

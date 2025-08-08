@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+		<script src="./js/creojs.js"></script>
+		<script type="text/creojs" src="./js/browser.creojs"></script>
+		<script type="text/creojs" src="./js/drawings.creojs"></script>
+		<!-- <script src="./js/currentModel.js"></script> -->
+		<!-- <script type="text/creojs" src="./js/currentModel2.creojs"></script> -->
+		<!-- <script type="text/creojs" src="./js/exportPdfStep.creojs"></script> -->
+		<!-- <script type="text/creojs" src="./js/changeColor.creojs"></script> -->
+		<link rel="stylesheet" href="./css/buttons.css">
+		<link rel="stylesheet" href="./css/colorsVariables.css">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+	  .narrow-column {
+    width: 4ch;
+    text-align: center;
+  }
+  </style>
+</head>
+<body onload="CreoJS.$ADD_ON_LOAD (initialize)">
+
+  <h1>Drawing List with Checkboxes</h1>
+  <table id="drawing-table">
+    <thead>
+      <tr>
+        <th>Drawing Name</th>
+        <th>PDF</th>
+        <th>STP</th>
+        <th>Both</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Table rows will be added here -->
+    </tbody>
+  </table>
+  <button onclick="getCheckedValues()">Get Checked Values</button>
+
+  <script>
+// Function to create the table rows dynamically
+function createDrawingTable(drawingPaths) {
+  const table = document.getElementById("drawing-table");
+  table.innerHTML = ""; // Clear existing content
+
+  // Create table header
+  const thead = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  ["Drawing Name", "PDF", "STP", "Both"].forEach((header, index) => {
+    const th = document.createElement("th");
+    th.textContent = header;
+    if (index > 0) th.classList.add("narrow-column"); // Apply narrow column class to PDF, STP, and Both
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  // Create table body
+  const tbody = document.createElement("tbody");
+  drawingPaths.forEach((path, index) => {
+    const row = document.createElement("tr");
+
+    // Drawing Name Cell
+    const nameCell = document.createElement("td");
+    nameCell.textContent = path;//.split("\\").pop().split(".drw")[0];// + ".drw"; // Clean file name
+    row.appendChild(nameCell);
+
+    // Checkbox Cells (PDF, STP, Both)
+    ["PDF", "STP", "Both"].forEach((type) => {
+      const cell = document.createElement("td");
+      const checkbox = createCheckbox(type, index); // Create checkbox dynamically
+      cell.appendChild(checkbox);
+      cell.classList.add("narrow-column"); // Apply narrow column class
+      row.appendChild(cell);
+    });
+
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+}
+
+// Helper function to create a checkbox
+function createCheckbox(type, index) {
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.id = `${type}-${index}`;
+  checkbox.value = type;
+  checkbox.name = `drawing-${index}`;
+  
+  // Add event listener for mutual exclusivity logic
+  checkbox.addEventListener("change", () => handleCheckboxChange(index, type));
+  
+  return checkbox;
+}
+
+// Function to handle mutual exclusivity of checkboxes
+function handleCheckboxChange(index, type) {
+  const pdfCheckbox = document.getElementById(`PDF-${index}`);
+  const stpCheckbox = document.getElementById(`STP-${index}`);
+  const bothCheckbox = document.getElementById(`Both-${index}`);
+
+  if (type === "Both" && bothCheckbox.checked) {
+    // If "Both" is checked, uncheck "PDF" and "STP"
+    pdfCheckbox.checked = false;
+    stpCheckbox.checked = false;
+  } else if ((type === "PDF" || type === "STP") && (pdfCheckbox.checked || stpCheckbox.checked)) {
+    // If either "PDF" or "STP" is checked, uncheck "Both"
+    bothCheckbox.checked = false;
+  }
+}
+
+// Function to retrieve checked values from the table
+function getCheckedValues() {
+  const checkedValues = [];
+  
+  // Select all rows in the table body
+  const tableRows = document.querySelectorAll("#drawing-table tbody tr");
+
+  tableRows.forEach((row, index) => {
+    // Find all checked checkboxes in the current row
+    const checkboxes = row.querySelectorAll(`input[name="drawing-${index}"]:checked`);
+    
+    // Map selected options to an array
+    const selectedOptions = Array.from(checkboxes).map((checkbox) => checkbox.value);
+
+    if (selectedOptions.length > 0) {
+      // Get the file name from the first cell of the row
+      const fileName = row.cells[0].textContent;
+
+      // Push the result into the checkedValues array
+      checkedValues.push({
+        fileName: fileName,
+        selectedOptions: selectedOptions,
+      });
+    }
+  });
+
+  console.log(checkedValues); // Output results to console
+  alert(JSON.stringify(checkedValues, null, 2)); // Display results in an alert box
+}
+
+// Use CreoJS.listDrawings() to get the drawing list and populate the table
+
+
+    // Use CreoJS.listDrawings() to get the drawing list
+    function initialize(){
+	CreoJS.listDrawings().then(drawingPaths => {
+      createDrawingTable(drawingPaths);
+    }).catch(error => {
+      console.error("Error fetching drawing list:", error);
+    });}
+  </script>
+</body>
+</html>

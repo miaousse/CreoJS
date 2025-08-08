@@ -1,0 +1,196 @@
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+			<script
+				src="./js/creojs.js"
+			>
+			</script>
+			<script
+				type="text/creojs"
+				src="./js/browser.creojs"
+			>
+					</script>
+			<script
+				type="text/creojs"
+				src="./js/myModels2.creojs">
+			</script>
+					<link
+			rel="stylesheet"
+			href="./css/general.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/colorsVariables.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/navbar.css"
+		>	
+		<link
+			rel="stylesheet"
+			href="./css/buttons.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/tables.css"
+		>
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	</head>
+	<body
+		onload="CreoJS.$ADD_ON_LOAD(initialize)"
+	>
+			<nav
+			id="main-navbar"
+			class="navbar"
+		>
+		</nav>
+		<script
+			src="./js/navbarButtons.js">
+		</script>
+		<script
+			src="./js/navbarGenerator.js">
+		</script>
+		<button 
+			class="actionButton" 
+			id="ral" 
+			onclick="saveModelInfos();fillModelsTable();"
+		>
+		Ajouter courant
+		</button>
+		<table
+			id="models"
+		>
+			<thead>
+				<tr>
+					<th>
+						Suppr.
+					</th>
+					<th>
+						2D
+					</th>
+					<th>
+						3D
+					</th>
+					<th>
+						Name
+					</th>
+					<th>
+						DS1
+					</th>
+				</tr>
+			</thead>
+			<tbody
+				id="models-tbody"
+			>
+			</tbody>
+		</table>
+</body>
+<script>
+function initialize(){
+fillModelsTable();
+}
+
+async function saveModelInfos() {
+	
+	const modelInfos = await CreoJS.getModelsInfos();
+
+    let models = [];
+    const stored = localStorage.getItem('models');
+    
+	if (stored) models = JSON.parse(stored);
+	models = models.filter(obj => Object.keys(obj).length > 0)
+	localStorage.setItem('models', JSON.stringify(models))
+    
+	const idx = models.findIndex(m => m.name === modelInfos.name);
+    if (idx === -1) {
+        models.push(modelInfos);
+        localStorage.setItem('models', JSON.stringify(models));
+        return;
+    }
+    models[idx] = modelInfos;
+    localStorage.setItem('models', JSON.stringify(models));
+}
+
+function getModelImage(type) {
+  const sourceDirectory = './assets/'
+  const imageMap = {
+    'prt': 'part16x16.png',
+    'asm': 'assembly16x16.png',
+    'drw': 'drawing_app16x16.png'
+  }
+  const imageName = imageMap[type]
+  return sourceDirectory + imageName
+}
+
+function fillModelsTable() {
+  let models = []
+  const stored = localStorage.getItem('models')
+  if (stored) models = JSON.parse(stored)
+  const tbody = document.getElementById('models-tbody')
+  tbody.innerHTML = ''
+  models.forEach(model => {
+    const tr = document.createElement('tr')
+
+    // Drawing image cell (first cell)
+    const drwTd = document.createElement('td')
+    const drwImg = document.createElement('img')
+    drwImg.src = getModelImage('drw')
+    drwImg.style.cursor = 'pointer'
+    drwImg.onclick = function() {
+      CreoJS.open2D(model.origin + '\\' + model.name)
+    }
+    drwTd.appendChild(drwImg)
+    tr.appendChild(drwTd)
+
+    // 3D image cell (second cell)
+    const prtOrAsmTd = document.createElement('td')
+    const typeKey = model.type === 'ASSEMBLY' ? 'asm' : 'prt'
+    const prtOrAsmImg = document.createElement('img')
+    prtOrAsmImg.src = getModelImage(typeKey)
+    prtOrAsmImg.style.cursor = 'pointer'
+    prtOrAsmImg.onclick = function() {
+      CreoJS.open3D(model.origin + '\\' + model.name)
+    }
+    prtOrAsmTd.appendChild(prtOrAsmImg)
+    tr.appendChild(prtOrAsmTd)
+
+    // Optionally add more cells for other model properties
+    // Example: ds1, name, origin, type
+    const props = ['name','ds1']
+	<!-- , 'origin', 'type'] -->
+    props.forEach(prop => {
+      const td = document.createElement('td')
+      td.textContent = model[prop]
+      tr.appendChild(td)
+    })
+
+    tbody.appendChild(tr)
+  })
+  
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Delegate click event to tbody for better performance
+  document.querySelector('#modelsTable tbody').addEventListener('click', function(event) {
+    if (event.target.classList.contains('delete-icon')) {
+      const row = event.target.closest('tr');
+      const modelName = row.getAttribute('data-model-name');
+      deleteModel(modelName, row);
+    }
+  });
+});
+
+function deleteModel(modelName, rowElement) {
+  // 1. Remove from localStorage
+  let models = JSON.parse(localStorage.getItem('models') || '[]');
+  models = models.filter(model => model.name !== modelName);
+  localStorage.setItem('models', JSON.stringify(models));
+
+  // 2. Remove row from table
+  rowElement.remove();
+}
+
+
+</script>
+</html>

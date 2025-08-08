@@ -1,0 +1,232 @@
+<html>
+	<head>
+		<title>Nomenclature</title>
+		<script
+			src="./js/creojs.js"
+		>
+		</script>
+		<script
+			type="text/creojs"
+			src="./js/browser.creojs"
+		>
+		</script>
+		<script
+			src="./js/bom.js">
+		</script>
+		<script
+			type="text/creojs"
+			src="./js/bom.creojs">
+		</script>
+		<link
+			rel="stylesheet"
+			href="./css/general.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/colorsVariables.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/navbar.css"
+		>	
+		<link
+			rel="stylesheet"
+			href="./css/buttons.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/tables.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/sliders.css"
+		>
+		<style>
+
+			tr.empty-statut {
+				background-color: #ffcccc;
+			}
+			.level-1 {
+				background-color: #87CEEB;
+			}
+			.level-2 {
+				background-color: #ADD8E6;
+			}
+			.level-3 {
+				background-color: #A1C9F2;
+			}
+			.level-4 {
+				background-color: #B2E6CE;
+			}
+			.level-5 {
+				background-color: #98B2CC;
+			}
+			.error {
+				color: red;
+				font-weight: bold;
+				margin: 10px;
+			}
+			.actionButton.copied {
+				background-color: #4CAF50; /* Green */
+				color: white;
+				border-color: #388E3C;
+		}
+.dark {
+  display: flex;                /* Add this line */
+  align-items: center;          /* Vertically center the items */
+  gap: 0.5em;                   /* Optional: space between icon and text */
+  background: #005496;
+  color: rgba(255, 255, 255, 1);
+  font-variation-settings: 'GRAD' -25;
+  font-size: 24px;
+  
+  margin-top: 20px;
+}
+.dark:hover {
+  background: transparent;
+  color: #005496;
+  font-variation-settings: 'GRAD' -50;
+}
+.material-symbols-outlined.large {font-size: 36px;}
+.title {
+	font-weight: bold;
+	font-size: 18px;
+}
+.alignedRight {
+	text-align: right;
+	padding-right: 5px;
+}
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    user-select: none;
+}
+#p00Filter {
+    display: none;
+}
+#p00Filter + label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    color: #333;
+}
+#p00Filter + label::before {
+    content: 'check_box_outline_blank';
+    font-family: 'Material Icons';
+    font-size: 20px;
+    color: #555;
+}
+#p00Filter:checked + label::before {
+    content: 'check_box';
+    color: #007bff;
+}
+#p00Filter + label:hover::before {
+    color: #007bff;
+}
+
+		</style>
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+		/>
+		<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	</head>
+	<body
+		onload="CreoJS.$ADD_ON_LOAD(initialize)"
+	>
+		<nav
+			id="main-navbar"
+			class="navbar"
+		>
+		</nav>
+		<script
+			src="./js/navbarButtons.js">
+		</script>
+		<script
+			src="./js/navbarGenerator.js">
+		</script>
+		
+	<div
+		class="dark large"
+	>
+		<span
+			class="material-symbols-outlined"
+			tabindex="0"
+			aria-label="Export en CSV"
+		>
+			csv
+		</span>
+		<button
+			id="exportClipboardBtn"
+			class="actionButton"
+			onclick="exportTableToCSV()"
+		>
+			Export en CSV
+		</button>
+
+	</div>		
+	<br>
+
+<div class="title" id="bomFor">
+	    <div id="bomfor">
+        <span id="fullname"></span>
+        <span id="revision" style="display:none;"></span>
+        <span id="ds1"></span>
+        <span id="ds2" style="display:none;"></span>
+        <span id="ds3" style="display:none;"></span>
+    </div>
+</div>
+<br>
+<div class="input-container">
+        <input type="text" id="inputField" placeholder="Rechercher dans la nomenclature...">
+        <span id="clearButton" class="material-icons">close</span>
+        <div class="checkbox-container">
+            <input type="checkbox" id="p00Filter">
+            <label for="p00Filter">P00</label>
+        </div>
+        <label 
+			for="levelSlider"
+		>
+			Choix du niveau (1 à
+			<span 
+				id="maxLevel"
+			>
+				1
+			</span>
+			):
+		</label>
+        <input 
+			type="range" 
+			id="levelSlider" 
+			min="1" 
+			max="1" 
+			value="1"
+		>
+        <span 
+			id="currentLevel"
+		>
+			1
+		</span>
+    </div>
+	
+
+
+	<div class="error"></div>
+	<div id="displayMessage"></div>
+	<table id="bom">
+		<tr>
+			<th>Drw</th>
+			<th>3D</th>
+			<th>#</th>
+			<th>Qté</th>
+			<th>Code</th>
+			<th>Rev</th>
+			<th>Description</th>
+			<th>Matière</th>
+		</tr>
+	</table>
+	</body>
+</html>

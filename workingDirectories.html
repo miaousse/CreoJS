@@ -1,0 +1,143 @@
+<html>
+	<head>
+		<title>
+			Choix du r&eacute;pertoire de travail
+		</title>
+		<script
+			src="./js/creojs.js"
+		>
+		</script>
+		<script
+			type="text/creojs"
+			src="./js/browser.creojs"
+		>
+		</script>
+		<script
+			src="./js/myWorkingDirectories.js"
+		>
+		</script>
+		<script
+			type="text/creojs"
+			src="./js/workingDirectories.creojs"
+		>
+		</script>
+		<link
+			rel="stylesheet"
+			href="./css/colorsVariables.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/general.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/buttons.css"
+		>
+		<link
+			href="./css/icons.css"
+			rel="stylesheet"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/myWorkingDirectories.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/navbar.css"
+		>   
+		<link
+			rel="stylesheet"
+			href="./css/tables.css"
+		>
+	</head>
+	<body
+		onload="CreoJS.$ADD_ON_LOAD(initialize)">
+			<nav
+				id="main-navbar"
+				class="navbar"
+			>
+			</nav>
+			<script
+				src="./js/navbarButtons.js">
+			</script>
+			<script
+				src="./js/navbarGenerator.js">
+			</script>
+		
+		<!-- <div -->
+			<!-- class="info-item" -->
+		<!-- > -->
+			<!-- <strong -->
+				<!-- class="info-title" -->
+			<!-- > -->
+				<!-- Répertoire de travail: -->
+			<!-- </strong> -->
+			<!-- <span -->
+				<!-- id="workingDirectory" -->
+			<!-- > -->
+			<!-- </span> -->
+		<!-- </div> -->
+        <div
+			id="directory-form"
+		>
+
+			<button 
+				class="actionButton" 
+				id="addChoosenDirectory" 
+				onclick="addChoosenDirectory()"
+			>
+				Choisir repertoire
+			</button>
+			<input
+				type="text" 
+				id="path-input" 
+				placeholder="Entrer le chemin complet"
+			>
+			<br>
+			<button 
+				class="actionButton" 
+				onclick="addDirectory()"
+			>
+				Ajouter
+			</button>
+			<input
+				type="text" 
+				id="description-input" 
+				placeholder="Entrer une description"
+			>
+		</div>
+		<br>
+		<span>
+			Choix du r&eacute;pertoire de travail:
+		</span>
+		<div
+			id="directory-list"
+		>
+		</div>
+
+		<script>
+			function initialize() {
+				CreoJS.getCurrentDirectory()
+					<!-- .then (function(path) { -->
+						<!-- workingDirectory.innerHTML = path; -->
+					<!-- }); -->
+				createDirectoryList();
+				loadDirectories();
+			}
+			function addChoosenDirectory() {
+				CreoJS.getPath()
+					.then(function(chosenPath) {
+						const path = document.getElementById('path-input');
+						path.value = chosenPath;
+						const description = document.getElementById('description-input');
+						description.value = '';
+						description.focus();
+						description.select();
+					})
+					.catch(function(error) {
+						console.error('Error getting path:', error);
+					});
+			}
+		</script>
+	</body>
+</html>

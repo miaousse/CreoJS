@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html
+	lang="fr"
+>
+	<head>
+		<meta
+			charset="UTF-8"
+		>
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		>
+		<title>Mes Notes</title>
+		<link
+			rel="stylesheet"
+			href="./css/general.css"
+		>
+
+		<link
+			rel="stylesheet"
+			href="./css/colorsVariables.css"
+		>
+		<link 
+			rel="stylesheet" 
+			href="./css/navbar.css"
+		>
+		<link 
+			rel="stylesheet" 
+			href="./css/buttons.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/notepad.css"
+		>		<link
+			rel="stylesheet"
+			href="./css/inputs.css"
+		><link
+			rel="stylesheet"
+			href="./css/textarea.css"
+		>
+	</head>
+	<body>
+		<div 
+			class="info-item"
+		>
+			<nav
+				id="main-navbar"
+				class="navbar"
+			>
+			</nav>
+			<script
+				src="./js/navbarButtons.js">
+			</script>
+			<script
+				src="./js/navbarGenerator.js">
+			</script>
+			<input
+				type="text"
+				id="title-input"
+				placeholder="Titre Note"
+				autofocus
+				required
+			>
+			<textarea
+				id="note-input"
+				rows="5"
+				placeholder="Entrer la note ici..."
+				required
+			>
+			</textarea>
+			<button
+				id="save-note"
+				class="actionButton"
+			>
+				Sauver Note
+			</button>
+			<h2>
+				Notes sauvées
+			</h2>
+			<ul
+				id="notes-list"
+			>
+			</ul>
+			<div
+				id="note-display"
+				class="hidden"
+			>
+				<pre
+					id="displayed-note-content"
+				>
+				</pre>
+				<button
+					id="close-note"
+					class="actionButton"
+				>
+					Fermer Note
+				</button>
+			</div>
+		</div>	
+		<script
+			src="./js/notepad.js"
+		>
+		</script>
+	</body>
+</html>
