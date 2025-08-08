@@ -1,0 +1,187 @@
+function ExportPdfStep() {
+    const session = pfcGetCurrentSession();
+	
+    const model = getModel();
+    model.Save();
+
+    const exportPath = 'C:\\CAO\\PDF_STEP\\';
+    let currentSolid, indice, indice_min;
+
+    if (model.Type === pfcModelType.MDL_DRAWING) {
+		
+        currentSolid = model.GetCurrentSolid();
+    } else {
+        currentSolid = model;
+    }
+
+    if (isLibrary(currentSolid.FullName)) {
+        indice = '';
+        indice_min = '';
+    } else {
+		const majorRevision = currentSolid.GetParam('INDICE');
+		const minorRevision = currentSolid.GetParam('INDICE_MIN');
+        indice = getValue(majorRevision);
+        indice_min = getValue(minorRevision);
+    }
+
+    const exportFileName = `${exportPath}${model.FullName}-${indice}${indice_min}`;
+
+    if (model.Type === pfcModelType.MDL_DRAWING) {
+        const PDFExportInstructions = pfcPDFExportInstructions.Create();
+        PDFExportInstructions.FilePath = exportPath;
+        PDFExportInstructions.ProfilePath = 'S:\\Config\\Creo 10.0\\Exportation\\PDF_depagne.dop';
+        model.Export(exportFileName, PDFExportInstructions);
+    }
+
+    const GeometryFlags = pfcGeometryFlags.Create();
+    GeometryFlags.AsQuilts = false;
+    GeometryFlags.AsSolids = true;
+    GeometryFlags.AsSurfaces = false;
+    GeometryFlags.AsWireframe = false;
+
+    const modelExport = pfcAssemblyConfiguration.EXPORT_ASM_SINGLE_FILE;
+    const modelInstruction = pfcSTEP3DExportInstructions.Create(modelExport, GeometryFlags);
+
+    currentSolid.Export(exportFileName, modelInstruction);
+    session.CurrentWindow.Repaint();
+}
+
+function isLibrary(inputString) {
+	if (inputString.startsWith('P00')) {
+        return false;
+    }
+    return /^[A-Z]\d{7}/.test(inputString);
+}
+
+function displayDialogBox(textMessage, dialogBoxLabel = 'Info', dialogType = 'INFO', dialogButton = 'OK') {
+    const session = pfcGetProESession();
+    const messageDialogSettings = pfcCreate('pfcMessageDialogOptions').Create();
+    
+    messageDialogSettings.DialogLabel = dialogBoxLabel;
+    messageDialogSettings.MessageDialogType = dialogBoxType(dialogType);
+    messageDialogSettings.DefaultButton = dialogBoxButton(dialogButton);
+    
+    session.UIShowMessageDialog(textMessage, messageDialogSettings);
+}
+
+function dialogBoxType(dialogType) {
+    const TYPE = pfcCreate('pfcMessageDialogType');
+    const messageTypeMap = {
+        'QUESTION': TYPE.MESSAGE_QUESTION,
+        'INFO': TYPE.MESSAGE_INFO,
+        'WARNING': TYPE.MESSAGE_WARNING
+    };
+
+    return messageTypeMap[dialogType.toUpperCase()] || null;
+}
+
+function dialogBoxButton(dialogBoxButtonType) {
+    const MESSAGE_BUTTON = pfcCreate('pfcMessageButton');
+    const buttonTypeMap = {
+        'OK': MESSAGE_BUTTON.MESSAGE_BUTTON_OK,
+        'YES': MESSAGE_BUTTON.MESSAGE_BUTTON_YES,
+        'NO': MESSAGE_BUTTON.MESSAGE_BUTTON_NO,
+        'ABORT': MESSAGE_BUTTON.MESSAGE_BUTTON_ABORT,
+        'RETRY': MESSAGE_BUTTON.MESSAGE_BUTTON_RETRY,
+        'IGNORE': MESSAGE_BUTTON.MESSAGE_BUTTON_IGNORE,
+        'CONFIRM': MESSAGE_BUTTON.MESSAGE_BUTTON_CONFIRM
+    };
+    
+    return buttonTypeMap[dialogBoxButtonType.toUpperCase()] || null;
+}
+
+function getParameterValue(name) {
+    if (!currentSolid) return '/';
+    const parameter = model.GetParam(name);
+	
+    return parameter ? getValue(parameter) : '/';
+}
+
+function getValue(parameter) {
+    try {
+        if (!parameter || !parameter.Value) return '';
+        
+        const valueDiscr = parameter.Value.discr;
+		// Browser.alert (valueDiscr);
+        const valueType = {
+            [pfcParamValueType.PARAM_STRING]: 'StringValue',
+            [pfcParamValueType.PARAM_INTEGER]: 'IntValue',
+            [pfcParamValueType.PARAM_BOOLEAN]: 'BoolValue',
+            [pfcParamValueType.PARAM_DOUBLE]: 'DoubleValue'
+        };
+
+        if (valueDiscr === pfcParamValueType.PARAM_INTEGER) {
+            return parameter.Value.IntValue.toString();
+        }
+
+        const typeProperty = valueType[valueDiscr];
+        return typeProperty && parameter.Value[typeProperty] !== undefined 
+            ? parameter.Value[typeProperty].toString() 
+            : '';
+    } catch (error) {
+        print(`Erreur dans la fonction getValue:\n${error.message}`);
+        return '';
+    }
+}
+function ExportPdf() {
+    const session = pfcGetCurrentSession();
+	const model = session.CurrentModel;
+    model.Save();
+
+    const EXPORTPATH = 'C:\\CAO\\PDF_STEP\\';
+    
+	let currentSolid, indice, indice_min;
+	currentSolid = model.GetCurrentSolid();
+    const majorRevision = currentSolid.GetParam('INDICE');
+	const minorRevision = currentSolid.GetParam('INDICE_MIN');
+	indice = getValue(majorRevision);
+	indice_min = getValue(minorRevision);
+  
+
+    const exportFileName = `${EXPORTPATH}${model.FullName}-${indice}${indice_min}`;
+
+	const PDFExportInstructions = pfcPDFExportInstructions.Create();
+	PDFExportInstructions.FilePath = EXPORTPATH;
+	PDFExportInstructions.ProfilePath = 'S:\\Config\\Creo 10.0\\Exportation\\PDF_depagne.dop';
+	model.Export(exportFileName, PDFExportInstructions);
+}
+
+function ExportPdf(fullName, indice, indice_min) {
+    const session = pfcGetCurrentSession();
+	const model = session.CurrentModel;
+    model.Save();
+
+    const EXPORTPATH = 'C:\\CAO\\PDF_STEP\\';
+    
+	const exportFileName = `${EXPORTPATH}${fullName}-${indice}${indice_min}`;
+
+	const PDFExportInstructions = pfcPDFExportInstructions.Create();
+	PDFExportInstructions.FilePath = EXPORTPATH;
+	PDFExportInstructions.ProfilePath = 'S:\\Config\\Creo 10.0\\Exportation\\PDF_depagne.dop';
+	model.Export(exportFileName, PDFExportInstructions);
+	const currentWindow = session.CurrentWindow;
+	currentWindow.Repaint();
+}
+function ExportStep(fullName, indice, indice_min) {
+    const session = pfcGetCurrentSession();
+    let model = session.CurrentModel;
+
+    const exportPath = 'C:\\CAO\\PDF_STEP\\';
+   
+    if (model.Type === pfcModelType.MDL_DRAWING) {
+        model = model.GetCurrentSolid();
+    }
+
+    const exportFileName = `${exportPath}${fullName}-${indice}${indice_min}`;
+
+    const GeometryFlags = pfcGeometryFlags.Create();
+    GeometryFlags.AsQuilts = false;
+    GeometryFlags.AsSolids = true;
+    GeometryFlags.AsSurfaces = false;
+    GeometryFlags.AsWireframe = false;
+
+    const modelExport = pfcAssemblyConfiguration.EXPORT_ASM_SINGLE_FILE;
+    const modelInstruction = pfcSTEP3DExportInstructions.Create(modelExport, GeometryFlags);
+
+    model.Export(exportFileName, modelInstruction);
+}

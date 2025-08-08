@@ -1,0 +1,232 @@
+const session = pfcGetCurrentSession();
+const model = session.CurrentModel;
+
+function getModel() {
+    if (!model) {
+        console.error('Error fetching model: No model available');
+        return null;
+    }
+
+    const modelTypeHandlers = {
+        [pfcModelType.MDL_DRAWING]: () => model.GetCurrentSolid(),
+        [pfcModelType.MDL_PART]: () => session.GetActiveModel(),
+        [pfcModelType.MDL_ASSEMBLY]: () => session.GetActiveModel()
+    };
+
+    const handler = modelTypeHandlers[model.Type];
+    if (!handler) {
+        console.error('Error fetching model: Unsupported model type');
+        return null;
+    }
+
+    try {
+        return handler();
+    } catch (error) {
+        console.error('Error fetching model:', error);
+        return null;
+    }
+}
+
+function getFullName() {
+    const model = getModel();
+    if (!model) throw new Error("There is no open model");
+    if (model.Type !== pfcModelType.MDL_ASSEMBLY) throw new Error("Current model is not an assembly");
+
+    const fullName = model.FullName;
+    let revision = '-';
+
+    if (!fullName.toLowerCase().startsWith('p00')) return { fullname: fullName, revision };
+
+    const indiceParam = model.GetParam('INDICE');
+    const indiceMinParam = model.GetParam('INDICE_MIN');
+    const indice = indiceParam ? indiceParam.Value.StringValue : 'non def';
+    const indiceMin = indiceMinParam ? indiceMinParam.Value.StringValue : 'non def';
+
+    if (indice !== 'non def' || indiceMin !== 'non def') {
+        revision = `${indice}${indiceMin}`;
+    }
+	
+    const ds1Param = model.GetParam('DS1');
+    const ds1 = ds1Param ? ds1Param.Value.StringValue : 'non def';
+	
+    const ds2Param = model.GetParam('DS2');
+    const ds2 = ds2Param ? ds2Param.Value.StringValue : 'non def';
+
+    const ds3Param = model.GetParam('DS3');
+    const ds3 = ds3Param ? ds3Param.Value.StringValue : 'non def';
+
+    return { fullname: fullName, revision: revision, ds1: ds1, ds2: ds2, ds3: ds3 };
+}
+
+function getModelBoM() {
+    const model = getModel();
+    if (!model) throw new Error("There is no open model");
+    if (model.Type === pfcModelType.MDL_PART) return { isPart: true };
+    if (model.Type !== pfcModelType.MDL_ASSEMBLY) throw new Error("Current model is not an assembly");
+
+    function getComponents(model, onlyVisible = false) {
+        return model.ListFeaturesByType(onlyVisible, pfcFeatureType.FEATTYPE_COMPONENT);
+    }
+
+    function getAssemblyStructure(model, parentFilename = null, level = 0) {
+        if (!model) return null;
+
+        const isAssembly = model.Type === pfcModelType.MDL_ASSEMBLY;
+        const filename = model.FullName;
+        let ds1 = '';
+        let statut = '';
+        let revision = '-';
+
+        const ds1Param = model.GetParam('DS1');
+        if (ds1Param && ds1Param.Value && ds1Param.Value.StringValue) {
+            ds1 = ds1Param.Value.StringValue;
+        }
+
+        const statutParam = model.GetParam('STATUT');
+        if (statutParam && statutParam.Value && statutParam.Value.StringValue) {
+            statut = statutParam.Value.StringValue;
+        }
+
+        if (filename.toLowerCase().startsWith('p00')) {
+            const indiceParam = model.GetParam('INDICE');
+            const indiceMinParam = model.GetParam('INDICE_MIN');
+			const indice = indiceParam && indiceParam.Value && indiceParam.Value.StringValue ? indiceParam.Value.StringValue : 'non def';
+            const indiceMin = indiceMinParam && indiceMinParam.Value && indiceMinParam.Value.StringValue ? indiceMinParam.Value.StringValue : 'non def';
+			let material = '';
+
+            if (indice !== 'non def' || indiceMin !== 'non def') {
+                revision = `${indice}${indiceMin}`;
+            }
+        }
+
+        const componentMap = {};
+        if (!isAssembly) {
+            return {
+                filename,
+                isAssembly,
+                ds1,
+                revision,
+				material,
+                statut,
+                count: 1,
+                parent: parentFilename,
+                level,
+                components: []
+            };
+        }
+
+        const components = getComponents(model);
+        for (const f of components) {
+            const compFilename = f.ModelDescr && f.ModelDescr.GetFileName ? f.ModelDescr.GetFileName() : null;
+            if (!compFilename) continue;
+
+            const compModel = session.GetModelFromFileName(compFilename);
+            if (!compModel) continue;
+
+            let compDS1 = '';
+            let compStatut = '';
+            let compRevision = '-';
+			let compMaterial = '-';
+
+            const compDS1Param = compModel.GetParam('DS1');
+            if (compDS1Param && compDS1Param.Value && compDS1Param.Value.StringValue) {
+                compDS1 = compDS1Param.Value.StringValue;
+            }
+
+            const compStatutParam = compModel.GetParam('STATUT');
+            if (compStatutParam && compStatutParam.Value && compStatutParam.Value.StringValue) {
+                compStatut = compStatutParam.Value.StringValue;
+            }
+
+            if (compFilename.toLowerCase().startsWith('p00')) {
+                const indiceParam = compModel.GetParam('INDICE');
+                const indiceMinParam = compModel.GetParam('INDICE_MIN');
+                const indice = indiceParam && indiceParam.Value && indiceParam.Value.StringValue ? indiceParam.Value.StringValue : 'non def';
+                const indiceMin = indiceMinParam && indiceMinParam.Value && indiceMinParam.Value.StringValue ? indiceMinParam.Value.StringValue : 'non def';
+                if (indice !== 'non def' || indiceMin !== 'non def') {
+                    compRevision = `${indice}${indiceMin}`;
+                }
+				const materialParam = compModel.GetParam('PTC_MASTER_MATERIAL');
+				
+				if (compModel.Type === pfcModelType.MDL_PART ){
+					compMaterial = materialParam && materialParam.Value && materialParam.Value.StringValue ? materialParam.Value.StringValue : '-';
+				}
+				if (compModel.Type === pfcModelType.MDL_ASSEMBLY ){
+					compMaterial = 'Sous ensemble';
+					// Browser.alert('asm');
+				}
+            }
+
+            const compKey = `${compFilename}|${compDS1}`;
+            if (!componentMap[compKey]) {
+                componentMap[compKey] = {
+                    filename: compFilename,
+                    isAssembly: compModel.Type === pfcModelType.MDL_ASSEMBLY,
+                    ds1: compDS1,
+                    revision: compRevision,
+                    statut: compStatut,
+                    count: 0,
+					material: compMaterial,
+                    parent: filename,
+                    level: level + 1,
+                    components: []
+                };
+            }
+            componentMap[compKey].count += 1;
+
+            if (compModel.Type === pfcModelType.MDL_ASSEMBLY) {
+                const subStructure = getAssemblyStructure(compModel, filename, level + 1);
+                if (subStructure && subStructure.components.length > 0) {
+                    componentMap[compKey].components = subStructure.components;
+                }
+            }
+        }
+
+        const componentsList = Object.values(componentMap);
+        return {
+            filename,
+            isAssembly,
+            ds1,
+            revision,
+            statut,
+            count: 1,
+            parent: parentFilename,
+            level,
+            components: componentsList
+        };
+    }
+
+    return getAssemblyStructure(model);
+}
+
+function open2D(fullName) {
+    const modelDescriptor = pfcModelDescriptor.CreateFromFileName(fullName + '.drw');
+    let drawing = session.GetModel(modelDescriptor.InstanceName, modelDescriptor.Type);
+    if (!drawing) {
+        session.OpenFile(modelDescriptor);
+        drawing = session.GetModel(modelDescriptor.InstanceName, modelDescriptor.Type);
+    }
+    if (drawing) {
+        drawing.Display();
+        drawing.Refresh;
+        activateWindow(drawing.FileName);
+    }
+}
+
+function open3D(fileName) {
+    const modelDescriptor = pfcModelDescriptor.CreateFromFileName(fileName);
+    let model = session.GetModel(modelDescriptor.InstanceName, modelDescriptor.Type);
+    model.Display();
+}
+
+function activateWindow(modelFileName) {
+    const allWindows = session.ListWindows();
+    allWindows.forEach(window => {
+        const model = window.Model;
+        if (model.FileName === modelFileName) {
+            window.Activate();
+            window.Refresh();
+            window.Repaint();
+        }
+    });
+}

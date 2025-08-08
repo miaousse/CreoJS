@@ -1,0 +1,230 @@
+function manageOldRevision(model) {
+
+
+    if (!model || !model.GetParam) {
+        throw new Error("Invalid model object");
+    }
+    const session = pfcGetCurrentSession();
+    const params = {
+        INDICE: model.GetParam("INDICE"),
+        VERSION: model.GetParam("VERSION"),
+        REVISION: model.GetParam("REVISION"),
+        INDICE_MIN: model.GetParam("INDICE_MIN")
+    };
+    try {
+        if (params.INDICE) {
+            const revisionValue = getValue(params.INDICE);
+            if (typeof revisionValue !== "string") {
+                session.UIShowMessageDialog(`INDICE is not a string: ${revisionValue}`, "WARNING");
+                return;
+            }
+            const matches = revisionValue.match(/^([A-Z]+)(\d+)$/);
+            if (matches) {
+                let [, letterPart, numericPart] = matches;
+                if (letterPart === "Z") {
+                    letterPart = "-"; // Consider incrementing to AA
+                }
+                updateParameter(model, "INDICE", letterPart);
+                createParameter(model, "INDICE_MIN", "STRING", numericPart);
+            } else {
+                session.UIShowMessageDialog(`Invalid INDICE format: ${revisionValue}`, "WARNING");
+            }
+            return;
+        }
+        if (params.VERSION && params.REVISION && !params.INDICE && !params.INDICE_MIN) {
+            createParameter(model, "INDICE", getTypeValue(params.VERSION), getValue(params.VERSION));
+            createParameter(model, "INDICE_MIN", getTypeValue(params.REVISION), getValue(params.REVISION));
+            return;
+        }
+        if (!params.VERSION && !params.REVISION && params.INDICE && params.INDICE_MIN) {
+            return; // No action needed
+        }
+        session.UIShowMessageDialog("No revision parameters found to process", "INFO");
+    } catch (error) {
+        session.UIShowMessageDialog(`Failed to manage old revision: ${error.message}`, "ERROR");
+        throw error;
+    }
+}
+
+function renameParameter(model, oldName, newName) {
+    if (!model || !model.GetParam) {
+        throw new Error("Invalid model object");
+    }
+    const oldParam = model.GetParam(oldName);
+    if (!oldParam) {
+        session.UIShowMessageDialog(`Parameter ${oldName} does not exist`, "WARNING");
+        return;
+    }
+    if (model.GetParam(newName)) {
+        session.UIShowMessageDialog(`Parameter ${newName} already exists`, "WARNING");
+        return;
+    }
+    try {
+        const value = getValue(oldParam);
+        const type = getTypeValue(oldParam);
+        ensureParameter(model, newName, type, value);
+        oldParam.Delete();
+        session.UIShowMessageDialog(`Parameter ${oldName} renamed to ${newName}`, "INFO");
+    } catch (error) {
+        session.UIShowMessageDialog(`Failed to rename ${oldName} to ${newName}: ${error.message}`, "ERROR");
+        throw error;
+    }
+}
+
+function getActiveModelRevision(model) {
+    if (!model || !model.GetParam) {
+        throw new Error("Invalid model object");
+    }
+    const majorParam = model.GetParam("INDICE");
+    const minorParam = model.GetParam("INDICE_MIN");
+    if (!majorParam || !minorParam) {
+        session.UIShowMessageDialog("Missing INDICE or INDICE_MIN parameters", "WARNING");
+        return "";
+    }
+    try {
+        const major = String(getValue(majorParam));
+        const minor = String(getValue(minorParam));
+        return major + minor;
+    } catch (error) {
+        session.UIShowMessageDialog(`Failed to get active revision: ${error.message}`, "ERROR");
+        return "";
+    }
+}
+
+function getValue(parameter) {
+    if (!parameter || !parameter.Value) {
+        return null;
+    }
+    const valueDiscr = parameter.Value.discr;
+    const valueTypeMap = {
+        [pfcParamValueType.PARAM_STRING]: "StringValue",
+        [pfcParamValueType.PARAM_INTEGER]: "IntValue",
+        [pfcParamValueType.PARAM_BOOLEAN]: "BoolValue",
+        [pfcParamValueType.PARAM_DOUBLE]: "DoubleValue"
+    };
+    const valueKey = valueTypeMap[valueDiscr];
+    return valueKey ? parameter.Value[valueKey] : null;
+}
+
+function ensureParameter(model, name, type, value) {
+    if (!model || !model.GetParam) {
+        throw new Error("Invalid model object");
+    }
+    try {
+        const parameterToCheck = model.GetParam(name);
+        if (!parameterToCheck) {
+            createParameter(model, name, type, value);
+        }
+        return model.GetParam(name);
+    } catch (error) {
+        session.UIShowMessageDialog(`Failed to ensure parameter ${name}: ${error.message}`, "ERROR");
+        throw error;
+    }
+}
+
+function createParameter(model, name, type, value) {
+    if (!model || !model.CreateParam) {
+        throw new Error("Invalid model object");
+    }
+    try {
+        if (!name.match(/^[A-Z0-9_]+$/)) {
+            throw new Error(`Invalid parameter name: ${name}`);
+        }
+        const paramType = getValueType(type);
+        const paramValue = createParameterValue(value, paramType);
+        model.CreateParam(name, paramValue);
+        session.UIShowMessageDialog(`Parameter ${name} created`, "INFO");
+    } catch (error) {
+        session.UIShowMessageDialog(`Failed to create parameter ${name}: ${error.message}`, "ERROR");
+        throw error;
+    }
+}
+
+function updateParameter(model, name, value) {
+    if (!model || !model.GetParam) {
+        throw new Error("Invalid model object");
+    }
+    try {
+        const param = model.GetParam(name);
+        if (!param) {
+            throw new Error(`Parameter ${name} does not exist`);
+        }
+        const paramType = getTypeValue(param);
+        const paramValue = createParameterValue(value, getValueType(paramType));
+        param.Value = paramValue;
+        session.UIShowMessageDialog(`Parameter ${name} updated`, "INFO");
+    } catch (error) {
+        session.UIShowMessageDialog(`Failed to update parameter ${name}: ${error.message}`, "ERROR");
+        throw error;
+    }
+}
+
+function getTypeValue(paramOrType) {
+    const typeMap = {
+        [pfcParamValueType.PARAM_STRING]: "STRING",
+        [pfcParamValueType.PARAM_INTEGER]: "INTEGER",
+        [pfcParamValueType.PARAM_BOOLEAN]: "BOOLEAN",
+        [pfcParamValueType.PARAM_DOUBLE]: "DOUBLE"
+    };
+    if (paramOrType && paramOrType.Value && paramOrType.Value.discr) {
+        return typeMap[paramOrType.Value.discr] || "STRING";
+    }
+    return typeMap[paramOrType] || "STRING";
+}
+
+function getValueType(typeString) {
+    if (!typeString || typeof typeString !== "string") {
+        throw new Error(`Invalid type: ${typeString}`);
+    }
+    const typeMap = {
+        STRING: pfcParamValueType.PARAM_STRING,
+        INTEGER: pfcParamValueType.PARAM_INTEGER,
+        BOOLEAN: pfcParamValueType.PARAM_BOOLEAN,
+        DOUBLE: pfcParamValueType.PARAM_DOUBLE
+    };
+    const type = typeMap[typeString.toUpperCase()];
+    if (!type) {
+        throw new Error(`Unknown Creo parameter type: ${typeString}`);
+    }
+    return type;
+}
+
+function createParameterValue(value, type) {
+    const createFunctions = {
+        [pfcParamValueType.PARAM_STRING]: pfcCreateStringParamValue,
+        [pfcParamValueType.PARAM_INTEGER]: pfcCreateIntParamValue,
+        [pfcParamValueType.PARAM_BOOLEAN]: pfcCreateBoolParamValue,
+        [pfcParamValueType.PARAM_DOUBLE]: pfcCreateDoubleParamValue
+    };
+    const createFn = createFunctions[type];
+    if (!createFn) {
+        throw new Error(`Unsupported Creo parameter type: ${type}`);
+    }
+    if (type === pfcParamValueType.PARAM_STRING) {
+        return createFn(String(value));
+    }
+    if (type === pfcParamValueType.PARAM_INTEGER) {
+        const intValue = parseInt(value, 10);
+        if (isNaN(intValue)) {
+            throw new Error(`Invalid integer value: ${value}`);
+        }
+        return createFn(intValue);
+    }
+    if (type === pfcParamValueType.PARAM_DOUBLE) {
+        const doubleValue = parseFloat(value);
+        if (isNaN(doubleValue)) {
+            throw new Error(`Invalid double value: ${value}`);
+        }
+        return createFn(doubleValue);
+    }
+    if (type === pfcParamValueType.PARAM_BOOLEAN) {
+        const boolValue = value === true || value === "true" || value === 1;
+        return createFn(boolValue);
+    }
+}
+
+function normalizeNFD(inputString) {
+    if (typeof inputString !== 'string') return '';
+    if (!/[^\u0000-\u007E]/g.test(inputString)) return inputString.toUpperCase();
+    return inputString.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+}

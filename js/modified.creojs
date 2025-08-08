@@ -1,0 +1,53 @@
+const session = pfcGetCurrentSession();
+const CurModel = session.CurrentModel;
+const models = session.ListModels();
+
+const validTypes = new Set([
+	pfcModelType.MDL_ASSEMBLY,
+	pfcModelType.MDL_PART,
+	pfcModelType.MDL_DRAWING
+]);
+function getModifiedModelsList() {
+    const modifiedModels = models.filter(model => model.IsModified && validTypes.has(model.Type));
+    if (modifiedModels.length === 0) {
+        return [];
+    }
+    return modifiedModels.map(model => [model.FileName, GetValueDS1(model.FileName), GetOrigin(model.FileName)]);
+}
+
+
+function SaveModel(model) {
+	const modelToErase  = session.GetModelFromFileName(model);
+	modelToErase.Save();
+}
+function EraseModel(model) {
+	const modelToErase  = session.GetModelFromFileName(model);
+	try {
+		modelToErase.EraseWithDependencies();
+	} catch (error) {
+        Browser.alert ('Modèle en cours d\'utilisation dans un autre modèle de niveau supérieur');
+    }
+}
+function DisplayModel(model) {
+	const modelToDisplay  = session.GetModelFromFileName(model);
+	modelToDisplay.DisplayInNewWindow();
+	const modelWindow = session.GetModelWindow(modelToDisplay);
+	modelWindow.Activate();
+}
+
+
+function GetValueDS1 (filename){
+	let model = session.GetModelFromFileName(filename);
+	if (model.Type === pfcModelType.MDL_DRAWING){
+		model = model.GetCurrentSolid();
+	}
+	return model.GetParam('DS1').Value.StringValue;
+}
+
+function GetOrigin(filename) {
+    const model = session.GetModelFromFileName(filename); // model never reassigned
+    const origin = model.Origin;
+    const lastSlash = origin.lastIndexOf('\\');
+    const pathWithoutFilename = origin.substring(0, lastSlash);
+    return pathWithoutFilename;
+}

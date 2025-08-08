@@ -1,0 +1,35 @@
+// const session = pfcGetCurrentSession ();
+let model = getModel();
+
+function updateChecker(value) {
+	updateParameterValue('VERIFICATEUR',value);
+	
+}
+function updateParameterValue(parameterName, newValue){
+	const parameter = model.GetParam(parameterName);
+	parameter.Value = createParameterValue(newValue,parameter.Value.discr);
+	
+}
+
+function createParameterValue(value, type) {
+    const createFunctions = {
+        [pfcParamValueType.PARAM_STRING]: pfcCreateStringParamValue,
+        [pfcParamValueType.PARAM_INTEGER]: pfcCreateIntParamValue,
+        [pfcParamValueType.PARAM_BOOLEAN]: pfcCreateBoolParamValue,
+        [pfcParamValueType.PARAM_DOUBLE]: pfcCreateDoubleParamValue
+    };
+    return createFunctions[type](value);
+}
+
+function getModel() {
+    const model = session.CurrentModel;
+    if (!model) return null;
+
+    const modelTypeHandlers = {
+        [pfcModelType.MDL_DRAWING]: () => model.GetCurrentSolid(),
+        [pfcModelType.MDL_PART]: () => session.GetActiveModel(),
+        [pfcModelType.MDL_ASSEMBLY]: () => session.GetActiveModel()
+    };
+
+    return modelTypeHandlers[model.Type] ? modelTypeHandlers[model.Type]() : null;
+}

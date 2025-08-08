@@ -1,0 +1,63 @@
+function alertModelInfos(modelInfos) {
+    const infoString = JSON.stringify(modelInfos, null, 2);
+    Browser.alert(infoString);
+}
+function getModelsInfos() {
+    const session = pfcGetCurrentSession();
+    const model = session.CurrentModel;
+
+    const modelInfos = {
+        name: '',
+        type: '',
+        ds1: '',
+        origin: ''
+    };
+
+    const paramDs1 = model.GetParam('DS1');
+    const paramDs2 = model.GetParam('DS2');
+    const paramDs3 = model.GetParam('DS3');
+
+    modelInfos.name = model.FullName.toUpperCase();
+    modelInfos.type = getType(model);
+    modelInfos.ds1 = [getValue(paramDs1), getValue(paramDs2), getValue(paramDs3)]
+		.filter(v => v != null && v !== '')
+		.join('-');
+    modelInfos.origin = getPath(model.Origin);
+	alertModelInfos(modelInfos);
+
+    return modelInfos;
+}
+
+function getPath(origin) {
+    const lastSlash = origin.lastIndexOf('\\');
+    if (lastSlash === -1) return origin;
+    return origin.substring(0, lastSlash);
+}
+
+function getValue(parameter) {
+    try {
+        const valueDiscr = parameter.Value.discr;
+        const valueType = {};
+        valueType[pfcParamValueType.PARAM_STRING] = 'StringValue';
+        valueType[pfcParamValueType.PARAM_INTEGER] = 'IntValue';
+        valueType[pfcParamValueType.PARAM_BOOLEAN] = 'BoolValue';
+        valueType[pfcParamValueType.PARAM_DOUBLE] = 'DoubleValue';
+
+        if (valueDiscr === pfcParamValueType.PARAM_INTEGER) return parameter.Value.IntValue.toString();
+
+        const typeProperty = valueType[valueDiscr];
+        if (typeProperty && parameter.Value[typeProperty] !== undefined) return parameter.Value[typeProperty].toString();
+        return '';
+    } catch (error) {
+        print('Erreur dans la fonction getValue:\n' + error.message);
+        return '';
+    }
+}
+function getType(model) {
+    const TYPE = model.Type;
+    const typeMap = {};
+    typeMap[pfcModelType.MDL_ASSEMBLY] = 'ASSEMBLY';
+    typeMap[pfcModelType.MDL_PART] = 'PART';
+    typeMap[pfcModelType.MDL_DRAWING] = 'DRAWING';
+    return typeMap[TYPE];
+}

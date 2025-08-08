@@ -1,0 +1,55 @@
+const session = pfcGetCurrentSession();
+const models = session.ListModels();
+
+function getModifiedModels() {
+  const modifiedModels = models
+    .filter(model => model.IsModified && (model.Type === pfcModelType.MDL_PART || model.Type === pfcModelType.MDL_ASSEMBLY || model.Type === pfcModelType.MDL_DRAWING))
+    .map(model => model.FileName);
+    
+  const notModifiedModels = models
+    .filter(model => !model.IsModified && (model.Type === pfcModelType.MDL_PART || model.Type === pfcModelType.MDL_ASSEMBLY || model.Type === pfcModelType.MDL_DRAWING))
+    .map(model => model.FileName);
+  
+  // Return an object with both arrays
+  return { modifiedModels, notModifiedModels };
+}
+
+
+
+function saveModel(modelName) {
+
+	const model = getModel(modelName);
+	model.Save();
+	// Browser.window.location.reload();
+// }
+
+function eraseFromSession(modelName) {
+  
+	const model = getModel(modelName);
+	model.Erase();
+	// Browser.window.location.reload();
+  
+}
+
+function retrieveModel(modelName) {
+
+	const model = getModel(modelName);
+	model.DisplayInNewWindow();
+
+	
+}
+
+// function getModelType(modelFileName) {
+	// const typeMap = {
+		// 'prt' : pfcModelType.MDL_PART,
+		// 'asm' : pfcModelType.MDL_ASSEMBLY,
+		// 'drw' : pfcModelType.MDL_DRAWING
+	// };
+	// const extension = modelFileName.split('.').pop().toLowerCase();
+	// return typeMap[extension];
+// }
+
+function getModel(modelName) {
+    const modelDescriptor = pfcModelDescriptor.CreateFromFileName(modelName);
+    return session.GetModel(modelDescriptor.InstanceName, modelDescriptor.Type);
+}

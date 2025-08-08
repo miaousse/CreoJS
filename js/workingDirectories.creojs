@@ -1,0 +1,22 @@
+const session = pfcGetCurrentSession ();
+
+function changeDir (path) {
+	session.ChangeDirectory(path)
+}
+
+function getCurrentDirectory(){
+	return session.GetCurrentDirectory();
+}
+
+function getPath(){
+	const baseDirectory = session.GetCurrentDirectory();
+		
+	const dirSelectionOptions = pfcDirectorySelectionOptions.Create();
+	dirSelectionOptions.DefaultPath = baseDirectory;
+	dirSelectionOptions.DialogLabel = 'Choix du répertoire';
+	
+	const selectedDirectory  = session.UISelectDirectory(dirSelectionOptions);
+
+	return selectedDirectory;
+	
+}

@@ -1,0 +1,281 @@
+const session = pfcGetCurrentSession ();
+let model = session.CurrentModel;
+if (model) {
+
+	switch (model.Type) {
+		
+		case  pfcModelType.MDL_DRAWING:
+			model = session.CurrentModel.GetCurrentSolid();
+			break;
+			
+		case pfcModelType.MDL_PART:
+		case pfcModelType.MDL_ASSEMBLY:
+			model = session.GetActiveModel();
+			break;
+	
+	}
+
+}
+
+getParametersValues() {
+	
+	let parameters = [
+		{name:'DS1', value:'\'},
+		{name:'DS2', value:'\'},
+		{name:'DS3', value:'\'},
+		{name:'Version', value:'\'},
+		{name:'Revision', value: '\'},
+		{name:'Code', value: '\'},
+		{name:'Fournisseur', value: 0},
+		{name:'Protection', value: '\'},
+		{name:'tol_gen', value: '\'},
+	];
+	
+	if (!model) {
+		
+		return parameters;
+		break;
+	
+	}
+	
+	if (model.GetParam('Elec')) {
+		
+		parameters = parameters.filter(item => !['Protection', 'tol_gen', 'Version', 'Revision', 'DS2', 'DS3'].includes(item.name));
+		// createParameter('Elec', pfcParamValueType.PARAM_BOOLEAN, 'true');
+		return parameters;
+		break;
+		
+	}
+	
+	const parameterDS1 = getParameterValue('DS1');
+	const parameterDS2 = getParameterValue('DS2');
+	const parameterDS3 = getParameterValue('DS3');
+	
+}
+
+function getCurrentDirectory(){
+	
+	return session.GetCurrentDirectory();
+
+}
+
+function getActiveCurrentModelName () {
+
+	if (!model){
+
+		return 'pas de modele en cours';
+
+	}
+	return model.FullName;
+}
+
+function getIsModified () {
+	return model.IsModified;
+}
+function changeDir (path) {
+
+	session.ChangeDirectory(path)
+
+}
+function getParameterValue(name) {
+	alert (name);
+
+	if (!model) {
+			return '/';
+	}
+	
+	let parameter = model.GetParam(name);
+	if (!parameter) {
+	alert (name);
+		switch (name) {
+			
+			case 'DS1':
+			case 'DS2':
+			case 'DS3':
+			case 'Version':
+			case 'Code':
+			case 'Fournisseur':
+			case 'Protection':
+			case 'Tol_gen':
+				type = pfcParamValueType.PARAM_STRING;
+				break;
+			
+			case 'Revision':
+				type = pfcParamValueType.PARAM_INTEGER;
+				break;
+		
+		};
+		createParameter(name, type, 'CREER!!!');
+
+	}
+
+	if (parameter) {
+
+		return toValue(parameter.Value);
+
+	}
+
+}
+function toValue(parameterValue) {
+
+    switch (parameterValue.discr) {
+
+        case pfcParamValueType.PARAM_STRING:
+            return parameterValue.StringValue;
+			
+        case pfcParamValueType.PARAM_INTEGER:
+            return parameterValue.IntValue;
+			
+        case pfcParamValueType.PARAM_BOOLEAN:
+            return parameterValue.BoolValue;
+			
+        case pfcParamValueType.PARAM_DOUBLE:
+            return parameterValue.DoubleValue;
+			
+        default:
+            return '';
+
+    }
+
+}
+
+function getDrawingLink() {
+	
+	if (model.Type === pfcModelType.MDL_DRAWING) {
+
+		return false;
+	}
+	
+	if (model.Type === pfcModelType.MDL_ASSEMBLY || model.Type === pfcModelType.MDL_PART) {
+
+		const drawingDescriptor = pfcModelDescriptor.CreateFromFileName( model.FullName + '.drw');
+		let drawing = session.GetModel(drawingDescriptor.InstanceName, drawingDescriptor.Type);
+
+		if(!drawing) {
+
+			session.OpenFile(drawingDescriptor);
+			drawing = session.GetModel(drawingDescriptor.InstanceName, drawingDescriptor.Type);
+
+		}
+
+		if (drawing) {
+
+			drawing.Display();
+			drawing.Refresh;
+			activateWindow(drawing.FileName);
+
+		}
+
+	}
+}
+
+function openDrawing(){
+	const drawings = session.ListModelsByType(pfcModelType.MDL_DRAWING)
+	let drawingInSession = false
+	
+	drawings.forEach (drawing => {
+		if (model.FullName === drawing.FullName) {
+			drawingInSession = true;
+		}
+	});
+	
+	if (!drawingInSession) {
+		session.OpenFile(drawingDescriptor);
+	}
+	let drawing = session.GetModel(drawingDescriptor.InstanceName, drawingDescriptor.Type);
+	drawing.Display();
+	drawing.Refresh;
+	activateWindow(drawing.FileName);
+	
+}
+
+function activateWindow(modelFileName){
+	const allWindows = session.ListWindows();
+	allWindows.forEach(
+		window =>{
+			const model = window.Model;
+			if (model.FileName === modelFileName){
+				window.Activate();
+				window.Refresh();
+				window.Repaint();
+			}
+		}
+	)
+}
+ 
+function updateRevision() {
+
+	let revisionValue = getParameterValue('Revision');
+	revisionValue++;
+
+	updateParameterValue('Revision',revisionValue);
+
+	return revisionValue;
+}
+
+function updateVersion() {
+
+	let versionValue = getParameterValue('Version');
+	versionValue = incrementVersion(versionValue);
+
+	updateParameterValue('Version', versionValue);
+	updateParameterValue('Revision',0);
+
+	return versionValue;
+}
+
+function updateCode () {
+
+	const value = ('P00' + model.FullName.slice(0, 5));	
+	alert (value);
+	updateParameterValue('Code',value);
+	updateParameterValue('Fournisseur',value);
+	
+}
+
+
+function incrementVersion(value) {
+	
+    if (value === "-") return "A";
+    return String.fromCharCode(value.charCodeAt(0) + 1);
+}
+
+function createParameter (name, value, type){
+	alert('create param');
+	const paramValue = createParameterValue(value, type);
+	model.CreateParam(name,paramValue);
+}
+
+function updateParameterValue(parameterName, newValue){
+	const parameter = model.GetParam(parameterName);
+	parameter.Value = createParameterValue(newValue,parameter.Value.discr);
+	
+}
+
+function createParameterValue (value, type){
+	switch (type) {
+        case pfcParamValueType.PARAM_STRING:
+			return pfcCreateStringParamValue(value);
+        case pfcParamValueType.PARAM_INTEGER:
+			return pfcCreateIntParamValue(value);
+        case pfcParamValueType.PARAM_BOOLEAN:
+			return pfcCreateBoolParamValue(value);
+        case pfcParamValueType.PARAM_DOUBLE:
+			return pfcCreateDoubleParamValue(value);
+	}
+}
+function normalizeNFD (inputString) {
+
+	inputString = inputString.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+	inputString = inputString.toUpperCase();
+	return inputString;
+	
+}
+
+function uppercase (inputDS1, inputDS2, inputDS3){
+
+	updateParameterValue('DS1',normalizeNFD(inputDS1));
+	updateParameterValue('DS2',normalizeNFD(inputDS2));
+	updateParameterValue('DS3',normalizeNFD(inputDS3))	
+		
+}

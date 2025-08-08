@@ -1,0 +1,23 @@
+const session = pfcGetCurrentSession ();
+let model = getModel();
+
+function getModel() {
+    const model = session.CurrentModel;
+    if (!model) return null;
+
+    const modelTypeHandlers = {
+        [pfcModelType.MDL_DRAWING]: () => model.GetCurrentSolid(),
+        [pfcModelType.MDL_PART]: () => session.GetActiveModel(),
+        [pfcModelType.MDL_ASSEMBLY]: () => session.GetActiveModel()
+    };
+
+    return modelTypeHandlers[model.Type] ? modelTypeHandlers[model.Type]() : null;
+}
+function getDS1(model) {
+    // const model = session.CurrentModel;
+    // const model = session.CurrentModel;
+	Browser.alert(model.GetParam('DS1').Value.StringValue);
+}
+function test(){
+	Browser.alert ('jr');
+}

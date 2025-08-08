@@ -1,0 +1,9 @@
+const session = pfcGetCurrentSession ();
+const currentDir = session.GetCurrentDirectory();
+function listDrawings(){
+	const drawings = session.ListFiles('*.drw', pfcFileListOpt.FILE_LIST_LATEST, currentDir);
+	const cleanedDrawings = drawings.map((drawing) => {
+		return drawing.split("\\").pop().split('.drw')[0];
+	});
+	return cleanedDrawings;
+}

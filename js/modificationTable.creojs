@@ -1,0 +1,180 @@
+let bomTableExists = false;
+
+const CONSTANTS = {
+    NORMAL_TEXT: pfcParamMode.DWGTABLE_NORMAL,
+    FULL_TEXT: pfcParamMode.DWGTABLE_FULL,
+    REVISION_TABLE: 'Ind.',
+    DS1: '&DS1',
+    QUANTITY: 'Qté'
+};
+
+function updateRevisionTable2(checker, description){
+	const session = pfcGetCurrentSession();
+	const currentModel = session.CurrentModel;
+    const activeModel = currentModel.GetCurrentSolid();
+    const tables = currentModel.ListTables();
+    tables.forEach(table => {
+		const ROW_COUNT = table.GetRowCount();
+        const COLUMN_COUNT = table.GetColumnCount();
+		const majorParam = activeModel.GetParam("INDICE");
+		const minorParam = activeModel.GetParam("INDICE_MIN");
+        const major = String(getValue(majorParam));
+        const minor = String(getValue(minorParam));
+		const currentRevision = major + minor;
+		const drawer = getValue(currentModel.GetParam('MODIFICATEUR'));
+		
+		const isLeftToRight = table.GetText(pfcTableCell.Create(1, 1), CONSTANTS.NORMAL_TEXT).includes(CONSTANTS.REVISION_TABLE);
+        const isRightToLeft = table.GetText(pfcTableCell.Create(1, 5), CONSTANTS.NORMAL_TEXT).includes(CONSTANTS.REVISION_TABLE);
+	    if (isLeftToRight || isRightToLeft) {
+			const columnOrder = isLeftToRight ? [1, 2, 3, 4, 5] : [5, 4, 3, 2, 1];
+			try {
+				const lastRevisionValue = table.GetText(pfcTableCell.Create(ROW_COUNT, columnOrder[0]), CONSTANTS.NORMAL_TEXT);
+				const offset = lastRevisionValue[0] === '-' ? 0 : 1;
+				if (lastRevisionValue[0] !== currentRevision) {
+					 table.InsertRow(0.7, ROW_COUNT, true);
+				}
+                const newRowIndex = ROW_COUNT + offset;
+				const newValues = [currentRevision, getTrigram(drawer), checker, '&todays_date', description];
+                newValues.forEach((value, index) => {
+                    table.SetText(pfcTableCell.Create(newRowIndex, columnOrder[index]), [value]);
+                });
+			} catch (error) {
+			// session.UIShowMessageDialog(`Error updating revision table: ${error.message}`, "ERROR");
+				throw error;
+			}
+		}
+	});
+}
+
+function optimizeDrawingTables() {
+	const session = pfcGetCurrentSession();
+	const currentModel = session.CurrentModel;
+    try {
+        const activeModel = currentModel.GetCurrentSolid();
+        updateRevisionParameters(activeModel);
+        const ACTIVE_MODEL_REVISION = getActiveModelRevision(activeModel);
+        const DRAWER = ensureParameter(activeModel, 'MODIFICATEUR', 'STRING', 'jrcivetta');
+        const CHECKER = ensureParameter(activeModel, 'VERIFICATEUR', 'STRING', 'blaon');
+        const tables = currentModel.ListTables();
+        tables.forEach(table => processTable(table, CONSTANTS, ACTIVE_MODEL_REVISION, DRAWER, CHECKER));
+        let updateSequence = ['~ Command `ProCmdDwgTblRegUpd`;'];
+        if (bomTableExists) {
+            updateSequence.push('~ Command `ProCmdDwgTblRegSS`;');
+        }
+        session.RunMacro(updateSequence.join(''));
+        activeModel.Save();
+        session.UIShowMessageDialog("Drawing tables optimized", "INFO");
+    } catch (error) {
+        session.UIShowMessageDialog(`Failed to optimize drawing tables: ${error.message}`, "ERROR");
+        throw error;
+    }
+}
+
+
+function updateRevisionParameters(model) {
+    try {
+        manageOldRevision(model);
+        renameParameter(model, 'VERSION', 'INDICE');
+        renameParameter(model, 'REVISION', 'INDICE_MIN');
+        session.UIShowMessageDialog("Revision parameters updated", "INFO");
+    } catch (error) {
+        session.UIShowMessageDialog(`Failed to update revision parameters: ${error.message}`, "ERROR");
+        throw error;
+    }
+}
+
+function processTable(table, CONSTANTS, ACTIVE_MODEL_REVISION, DRAWER, CHECKER) {
+    try {
+        const ROW_COUNT = table.GetRowCount();
+        const COLUMN_COUNT = table.GetColumnCount();
+        const firstCellContent = table.GetText(pfcTableCell.Create(1, 1), CONSTANTS.FULL_TEXT)[0] || '';
+        if (firstCellContent.includes(CONSTANTS.DS1) && ROW_COUNT === 8 && COLUMN_COUNT === 5) {
+            table.SetText(pfcTableCell.Create(2, 4), ['{0:&INDICE}{1:&INDICE_MIN}']);
+        }
+        if (table.GetText(pfcTableCell.Create(1, 1), CONSTANTS.NORMAL_TEXT)[0] === CONSTANTS.QUANTITY) {
+            bomTableExists = true;
+            table.SetText(pfcTableCell.Create(2, 4), ['{0:&asm.mbr.name}']);
+        }
+        const isLeftToRight = table.GetText(pfcTableCell.Create(1, 1), CONSTANTS.NORMAL_TEXT).includes(CONSTANTS.REVISION_TABLE);
+        const isRightToLeft = table.GetText(pfcTableCell.Create(1, 5), CONSTANTS.NORMAL_TEXT).includes(CONSTANTS.REVISION_TABLE);
+        if (isLeftToRight || isRightToLeft) {
+            updateRevisionTable(table, isLeftToRight, ROW_COUNT, ACTIVE_MODEL_REVISION, DRAWER, CHECKER, CONSTANTS);
+        }
+        session.UIShowMessageDialog("Table processed successfully", "INFO");
+    } catch (error) {
+        session.UIShowMessageDialog(`Error processing table: ${error.message}`, "ERROR");
+        throw error;
+    }
+}
+
+function updateRevisionTable(table, isLeftToRight, ROW_COUNT, ACTIVE_MODEL_REVISION, DRAWER, CHECKER, CONSTANTS) {
+    const columnOrder = isLeftToRight ? [1, 2, 3, 4, 5] : [5, 4, 3, 2, 1];
+    try {
+        const firstCell = table.GetText(pfcTableCell.Create(1, columnOrder[0]), CONSTANTS.FULL_TEXT);
+        if (firstCell) {
+            const lastCellValue = table.GetText(pfcTableCell.Create(ROW_COUNT, columnOrder[0]), CONSTANTS.NORMAL_TEXT);
+            const offset = lastCellValue[0] === '-' ? 0 : 1;
+            if (lastCellValue[0] !== ACTIVE_MODEL_REVISION) {
+                if (offset === 1) {
+                    table.InsertRow(0.7, ROW_COUNT, true);
+                }
+                const newRowIndex = ROW_COUNT + offset;
+                const newValues = [ACTIVE_MODEL_REVISION, getTrigram(getValue(DRAWER)), getTrigram(getValue(CHECKER)), '&todays_date'];
+                newValues.forEach((value, index) => {
+                    table.SetText(pfcTableCell.Create(newRowIndex, columnOrder[index]), [value]);
+                });
+            }
+        }
+        for (let indexRow = 2; indexRow <= ROW_COUNT; indexRow++) {
+            const currentCell = pfcTableCell.Create(indexRow, columnOrder[4]);
+            let currentCellContent;
+            try {
+                currentCellContent = table.GetText(currentCell, CONSTANTS.NORMAL_TEXT);
+            } catch (error) {
+                currentCellContent = [""];
+            }
+            const processedCellContent = currentCellContent[0] !== "" ? normalizeNFD(currentCellContent[0]) : "";
+            table.SetText(currentCell, [processedCellContent]);
+        }
+        session.UIShowMessageDialog("Revision table updated", "INFO");
+    } catch (error) {
+        session.UIShowMessageDialog(`Error updating revision table: ${error.message}`, "ERROR");
+        throw error;
+    }
+}
+
+function getTrigram(name) {
+    const trigramMap = {
+        jrcivetta: 'JCA',
+        rferrando: 'RFE',
+        bgodfrin: 'BGN',
+        libanez: 'LIB',
+        jlpielawsky: 'JPI',
+        jbperrier: 'JPE',
+        serbek: 'SEK',
+        blaon: 'BLA'
+    };
+    return trigramMap[name] || (typeof name === 'string' ? name.substring(0, 3).toUpperCase() : '');
+}
+
+function updateChecker(value) {
+	const session = pfcGetCurrentSession();
+	const currentModel = session.CurrentModel;
+    if (!currentModel) {
+        session.UIShowMessageDialog("No active model", "ERROR");
+        return;
+    }
+    try {
+        const checkerParameter = currentModel.GetParam('VERIFICATEUR');
+        if (!checkerParameter) {
+            createParameter(currentModel, 'MODIFICATEUR', 'STRING', 'jrcivetta');
+            createParameter(currentModel, 'VERIFICATEUR', 'STRING', value);
+        } else {
+            updateParameter(currentModel, 'VERIFICATEUR', value);
+        }
+        session.UIShowMessageDialog(`Checker updated to ${value}`, "INFO");
+    } catch (error) {
+        session.UIShowMessageDialog(`Failed to update checker: ${error.message}`, "ERROR");
+        throw error;
+    }
+}

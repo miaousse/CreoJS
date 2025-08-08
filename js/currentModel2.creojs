@@ -1,0 +1,272 @@
+const session = pfcGetCurrentSession();
+const model = session.CurrentModel;
+const modelInfos = {
+    'fullname': '/',
+    'DS1': '/',
+    'DS2': '/',
+    'DS3': '/',
+    'Indice': '/',
+    'Indice_min': '/',
+    'Tol_gen': '/',
+    'protection': '/',
+	'statut': '/'
+};
+
+function getModel() {
+    try {
+        if (!model) return null;
+
+        const modelTypeHandlers = {
+            [pfcModelType.MDL_DRAWING]: () => model.GetCurrentSolid(),
+            [pfcModelType.MDL_PART]: () => session.GetActiveModel(),
+            [pfcModelType.MDL_ASSEMBLY]: () => session.GetActiveModel()
+        };
+
+        return modelTypeHandlers[model.Type]?.() || null;
+    } catch (error) {
+        console.error('Error fetching model:', error);
+        return null;
+    }
+}
+
+function getModelInfos() {
+    return new Promise(resolve => {
+        let defaultResolution = Object.entries(modelInfos).map(([name, value]) => ({
+            name,
+            value: name === 'fullname' ? 'no model' : value
+        }));
+
+        const model = getModel(); // Fetch current model dynamically
+        if (!model) {
+            resolve(defaultResolution);
+            return;
+        }
+
+        try {
+            const version = model.GetParam('VERSION');
+            const revision = model.GetParam('REVISION');
+            const majorRevision = model.GetParam('INDICE');
+            const minorRevision = model.GetParam('INDICE_MIN');
+            let watchdog = true;
+
+            if (minorRevision) {
+                if (version) version.Delete();
+                if (revision) revision.Delete();
+                watchdog = false;
+            }
+
+            if (majorRevision && watchdog) {
+                const majorValue = getValue(majorRevision);
+                const matches = majorValue.match(/^([A-Z]+)(\d+)$/);
+                if (matches) {
+                    let [, letterPart, numericPart] = matches;
+                    letterPart = letterPart === 'Z' ? '-' : letterPart;
+                    updateOrCreateParameter('Indice', 'String', letterPart);
+                    updateOrCreateParameter('Indice_min', 'String', numericPart);
+
+                    if (version) version.Delete();
+                    if (revision) revision.Delete();
+                }
+                watchdog = false;
+            }
+			
+            if (version && revision && watchdog) {
+                updateOrCreateParameter('Indice', 'String', getValue(version));
+                updateOrCreateParameter('Indice_min', 'String', getValue(revision));
+
+                version.Delete();
+                revision.Delete();
+                watchdog = false;
+            }
+			if (!majorRevision & !minorRevision && watchdog) {
+                updateOrCreateParameter('Indice', 'String', 'A');
+                updateOrCreateParameter('Indice_min', 'String', '0');
+				
+			}
+            // Update `modelInfos` dynamically
+            Object.keys(modelInfos).forEach(name => {
+                try {
+                    if (name === 'fullname') {
+                        modelInfos[name] = model.FullName || '/';
+                    } else {
+                        const param = model.GetParam(name.toUpperCase());
+						modelInfos[name] = param?.Value?.StringValue || '/';
+                    }
+                } catch (error) {
+                    console.warn(`Error fetching parameter "${name}":`, error);
+                    modelInfos[name] = '/'; // Default value in case of error
+                }
+            });
+
+            // Convert updated object to array format for resolution
+            const result = Object.entries(modelInfos).map(([name, value]) => ({
+                name,
+                value
+            }));
+
+            resolve(result);
+        } catch (error) {
+            console.error('Error in getModelInfos:', error);
+            resolve(defaultResolution);
+        }
+    });
+}
+
+
+function updateOrCreateParameter(name, type, value) {
+    const param = model.GetParam(name);
+    param ? updateParameterValue(param, value) : createParameter(name, type, value);
+}
+
+function getValue(parameter) {
+    try {
+        const valueDiscr = parameter.Value.discr;
+        const valueType = {
+            [pfcParamValueType.PARAM_STRING]: 'StringValue',
+            [pfcParamValueType.PARAM_INTEGER]: 'IntValue',
+            [pfcParamValueType.PARAM_BOOLEAN]: 'BoolValue',
+            [pfcParamValueType.PARAM_DOUBLE]: 'DoubleValue'
+        };
+
+        if (valueDiscr === pfcParamValueType.PARAM_INTEGER) {
+            return parameter.Value.IntValue.toString();
+        }
+
+        const typeProperty = valueType[valueDiscr];
+        return typeProperty && parameter.Value[typeProperty] !== undefined 
+            ? parameter.Value[typeProperty].toString() 
+            : '';
+    } catch (error) {
+        print(`Erreur dans la fonction getValue:\n${error.message}`);
+        return '';
+    }
+}
+
+function createParameter(name, type, value) {
+    const paramType = getValueType(type);
+    const paramValue = createParameterValue(value, paramType);
+    model.CreateParam(name, paramValue);
+}
+
+function getValueType(typeString) {
+    const typeMap = {
+        'String': pfcParamValueType.PARAM_STRING,
+        'Integer': pfcParamValueType.PARAM_INTEGER,
+        'Boolean': pfcParamValueType.PARAM_BOOLEAN,
+        'Double': pfcParamValueType.PARAM_DOUBLE
+    };
+    return typeMap[typeString];
+}
+
+
+function createParameterValue(value, type) {
+    const createFunctions = {
+        [pfcParamValueType.PARAM_STRING]: pfcCreateStringParamValue,
+        [pfcParamValueType.PARAM_INTEGER]: pfcCreateIntParamValue,
+        [pfcParamValueType.PARAM_BOOLEAN]: pfcCreateBoolParamValue,
+        [pfcParamValueType.PARAM_DOUBLE]: pfcCreateDoubleParamValue
+    };
+    return createFunctions[type](value);
+}
+
+function getDrawingLink() {
+	
+	const model= getModel();
+	if (model.Type === pfcModelType.MDL_DRAWING) {
+
+		return false;
+	}
+	
+	if (model.Type === pfcModelType.MDL_ASSEMBLY || model.Type === pfcModelType.MDL_PART) {
+		try {
+			const drawingDescriptor = pfcModelDescriptor.CreateFromFileName( model.FullName + '.drw');
+			let drawing = session.GetModel(drawingDescriptor.InstanceName, drawingDescriptor.Type);
+			if(!drawing) {
+				session.OpenFile(drawingDescriptor);
+				drawing = session.GetModel(drawingDescriptor.InstanceName, drawingDescriptor.Type);
+			}
+			if (drawing) {
+				drawing.Display();
+				drawing.Refresh;
+				activateWindow(drawing.FileName);
+			}
+		} catch (e) {
+			Browser.alert('Fichier non existant');
+		}
+
+	}
+}
+
+function openDrawing(){
+	const drawings = session.ListModelsByType(pfcModelType.MDL_DRAWING)
+	let drawingInSession = false
+	
+	drawings.forEach (drawing => {
+		if (model.FullName === drawing.FullName) {
+			drawingInSession = true;
+		}
+	});
+	
+	if (!drawingInSession) {
+		session.OpenFile(drawingDescriptor);
+	}
+	let drawing = session.GetModel(drawingDescriptor.InstanceName, drawingDescriptor.Type);
+	drawing.Display();
+	drawing.Refresh;
+	activateWindow(drawing.FileName);
+	
+}
+
+function activateWindow(modelFileName){
+	const allWindows = session.ListWindows();
+	allWindows.forEach(
+		window =>{
+			const model = window.Model;
+			if (model.FileName === modelFileName){
+				window.Activate();
+				window.Refresh();
+				window.Repaint();
+			}
+		}
+	)
+}
+
+
+function incrementVersion(value) {
+	
+    if (value === "-") return "A";
+    return String.fromCharCode(value.charCodeAt(0) + 1);
+}
+
+function updateParameterValueFromHTML(parameterName, newValue){
+	const model = getModel();
+	const parameter = model.GetParam(parameterName.toUpperCase());
+	updateParameterValue(parameter, newValue);
+}
+function updateParameterValue(parameter, newValue){
+	parameter.Value = createParameterValue(newValue,parameter.Value.discr);
+}
+
+
+function normalizeNFD (inputString) {
+	let outputString = inputString.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+	outputString = outputString.toUpperCase();
+	return outputString;
+	
+}
+
+function uppercase (inputDS1, inputDS2, inputDS3){
+	const DS1 = model.GetParam('DS1');
+	const DS2 = model.GetParam('DS2');
+	const DS3 = model.GetParam('DS3');
+	updateParameterValue(DS1,normalizeNFD(inputDS1));
+	updateParameterValue(DS2,normalizeNFD(inputDS2));
+	updateParameterValue(DS3,normalizeNFD(inputDS3))	
+		
+}
+
+
+function purge () {
+	
+		session.RunMacro('@SYSTEMpurge;');
+}

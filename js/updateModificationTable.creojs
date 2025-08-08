@@ -1,0 +1,50 @@
+
+function updateLastRevisionField(value,checker) {
+	const session = pfcGetCurrentSession();
+	const currentModel = session.CurrentModel;
+    if (!currentModel) {
+        return;
+    }
+    if (!value || typeof value !== "string") {
+        return;
+    }
+    try {
+        const tables = currentModel.ListTables();
+        tables.forEach(table => {
+            const ROW_COUNT = table.GetRowCount();
+            const isLeftToRight = table.GetText(pfcTableCell.Create(1, 1), CONSTANTS.NORMAL_TEXT).includes(CONSTANTS.REVISION_TABLE);
+            const isRightToLeft = table.GetText(pfcTableCell.Create(1, 5), CONSTANTS.NORMAL_TEXT).includes(CONSTANTS.REVISION_TABLE);
+            if (isLeftToRight || isRightToLeft) {
+                updateField(table, isLeftToRight, ROW_COUNT, value,'description');
+                updateField(table, isLeftToRight, ROW_COUNT, checker,'checker');
+            }
+        });
+    } catch (error) {
+        //session.UIShowMessageDialog(`Failed to update table field: ${error.message}`, "ERROR");
+        throw error;
+    }
+}
+
+function updateField(table, isLeftToRight, row, value, cell) {
+	const session = pfcGetCurrentSession();
+	const currentModel = session.CurrentModel;
+    try {
+		let colIndex = 1;
+		if (cell === 'description'){
+
+			colIndex=4;
+		}
+		if (cell === 'checker'){
+			colIndex=2;
+
+		};
+		
+        const columnOrder = isLeftToRight ? [1, 2, 3, 4, 5] : [5, 4, 3, 2, 1];
+        const cellToWrite = pfcTableCell.Create(row, columnOrder[colIndex]);
+        const normalizedValue = normalizeNFD(value);
+        table.SetText(cellToWrite, [normalizedValue]);
+    } catch (error) {
+        // session.UIShowMessageDialog(`Failed to update table field: ${error.message}`, "ERROR");
+        throw error;
+    }
+}

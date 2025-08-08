@@ -1,0 +1,32 @@
+const session = pfcGetCurrentSession ();
+
+function getModel(modelName, type) {
+	const modelDescriptor = pfcModelDescriptor.CreateFromFileName( modelName + '.' + type);
+	let model = session.GetModel(modelDescriptor.InstanceName, modelDescriptor.Type);
+
+	if(!model) {
+
+		session.OpenFile(modelDescriptor);
+		model = session.GetModel(modelDescriptor.InstanceName, modelDescriptor.Type);
+
+	}
+
+	if (model) {
+
+		model.Display();
+
+	}
+	activateWindow(model.FileName);
+	return model;
+}
+function activateWindow(modelFileName) {
+    const allWindows = session.ListWindows();
+    const targetWindow = allWindows.find(window => window.Model.FileName === modelFileName);
+    
+    if (targetWindow) {
+        targetWindow.Activate();
+        targetWindow.Refresh();
+        targetWindow.Repaint();
+        return true;
+    }
+}
