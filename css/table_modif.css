@@ -1,0 +1,48 @@
+body {
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	background-color: #fbfbfc;
+	color: #333;
+}
+
+#userButtons {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 5px;
+	padding: 2px;
+}
+
+.radio-card {
+	background-color: rgb(0,84,150);
+	border-radius: 8px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	overflow: hidden;
+	transition: all 0.3s ease;
+	color: #ffffff;
+}
+
+.radio-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 12px rgba(243,112,33, 0.5);
+	background-color: rgb(243,112,33);
+}
+
+.radio-card input {
+	display: none;
+}
+
+.radio-card label {
+	display: block;
+	padding: 5px;
+	cursor: pointer;
+	transition: background-color 0.3s ease;
+	color: white; /* Added to ensure text is visible on dark background */
+}
+.radio-card input:checked + label {
+	background-color: rgb(243,112,33);
+	color: white;
+}
+
+.radio-card span {
+	font-size: 18px;
+	font-weight: 500;
+}

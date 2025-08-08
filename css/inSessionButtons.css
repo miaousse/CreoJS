@@ -1,0 +1,18 @@
+.hover-image-button {
+    position: relative;
+    cursor: pointer;
+    border: none;
+    padding: 5px;
+    margin: 2px;
+    width: 15px;
+    height: 15px;
+    background-size: 15px 15px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-image: var(--normal-image);
+}
+
+.hover-image-button:hover {
+    background-image: var(--hover-image);
+	cursor: pointer;
+}

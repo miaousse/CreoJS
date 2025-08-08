@@ -1,0 +1,13 @@
+th:nth-child(2),
+td:nth-child(2) {
+    padding: 2px 20px 2px 20px;
+}
+th:nth-child(3),
+td:nth-child(3) {
+	padding: 2px 1em 2px 20px;
+}
+
+.modifiedModel {
+	background-color: var(--highlight-background-red);
+	color: #FFFFFF;
+}

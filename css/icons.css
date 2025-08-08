@@ -1,0 +1,11 @@
+img.actionImage:hover {
+	background-color:  #005496;
+	width:20px;
+	height:20px;
+}
+img.actionImage {
+	width:20px;
+	height:20px;
+	background-color:  transparent;
+	transition: background-color 0.3s, color 0.3s;
+}

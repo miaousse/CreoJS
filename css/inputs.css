@@ -1,0 +1,19 @@
+input {
+	background-color: #fff;
+	border: none;
+	box-sizing: border-box;
+	padding: 2px 4px;
+	margin-bottom: 2px;
+	transition: background-color 0.3s, box-shadow 0.3s;
+	box-shadow: 0 2px 8px 0 rgba(0, 137, 207, 0.10), 0 1.5px 3px 0 rgba(0, 0, 0, 0.07);
+}
+input:focus {
+	background-color: #f0faff;
+	outline: none;
+	box-shadow: 0 0 0 2px #0089cf, 0 2px 8px 0 rgba(0, 137, 207, 0.15);
+}
+
+input:disabled {
+	border: none;
+	margin-bottom: 2px;
+}

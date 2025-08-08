@@ -1,0 +1,99 @@
+caption {
+    color: rgba(0, 84, 150, 1);
+    font-variant: small-caps;
+    font-size: 20px;
+}
+
+.nom {
+    width: 300px !important;
+    font-weight: bold;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.interne {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.externe,
+.mobile {
+    width: 100px;
+    white-space: nowrap;
+}
+
+.site {
+    white-space: nowrap;
+    text-align: left;
+}
+
+input,
+label {
+    margin: 20px;
+}
+
+input {
+    background-color: rgba(247, 249, 250, 1);
+    resize: none;
+    border-radius: 4px;
+    border: 2px solid rgba(253, 185, 19, 0.5);
+}
+
+input:focus {
+    background-color: rgba(230, 230, 230, 1);
+}
+
+#phonebook {
+    border-collapse: collapse;
+}
+
+#phonebook th,
+#phonebook td {
+    padding: 4px;
+    text-align: center;
+}
+
+#phonebook tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+#phonebook tr:hover td:first-child {
+    font-weight: bold;
+}
+#phonebook td:first-child {
+    text-align: right;
+}
+
+#phonebook tr:hover td {
+    background-color: #999;
+    color: white;
+	transition: all .5s ease;
+}
+
+#phonebook tr td {
+    transition: all .5s ease;
+}
+#phonebook tr td:hover {
+    background-color: #306090;
+    border-radius: 4px;
+    color: white;
+	transform: scale(1.05);
+    transition: transform 1s ease-in-out;
+}
+
+.table_head {
+    background: rgba(0, 84, 150, 1);
+    font-weight: bold;
+    color: white;
+}
+
+.header {
+    background-color: rgba(145, 202, 238, 0.5);
+    font-weight: bold;
+    color: black;
+    text-align: right;
+}
+
+input.inputField {
+    height: 2ch;
+}

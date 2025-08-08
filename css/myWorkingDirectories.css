@@ -1,0 +1,21 @@
+.current-working-directory {
+    background-color: var(--highlight-background-green-dark);
+    font-weight: bold;
+    border-right: 4px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+#directory-container {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+#directory-list {
+    max-width: 350px;
+    width: 100%;
+}
+
+.working-dir::after {
+	content: " <- en cours";
+}

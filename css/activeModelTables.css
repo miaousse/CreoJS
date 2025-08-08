@@ -1,0 +1,18 @@
+table {
+	margin: 4px;
+	border-collapse: collapse;
+	width: 58ch;
+	min-width: 58ch;
+	max-width: 58ch;
+}
+
+th:first-child,
+td:first-child {
+	text-align: right;
+	width: 12ch;
+}
+
+th:last-child,
+td:last-child {
+	width: 14ch;
+}

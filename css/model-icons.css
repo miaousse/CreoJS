@@ -1,0 +1,12 @@
+.model-icon {
+    width: 32px;
+    height: 32px;
+    vertical-align: middle;
+    margin-right: 8px;
+    background-color: transparent;
+    transition: background-color 0.3s;
+}
+
+.model-icon:hover {
+    background-color: var(--highlight-background-green);
+}

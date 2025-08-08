@@ -1,0 +1,15 @@
+#name {
+  /* display: flex; */
+  align-items: center;
+  background-color:red;
+  /* gap: 10px; */
+  
+ }
+
+
+
+#ralValue {
+  width: 7ch;
+  font-family: monospace;
+  margin: 0 6px;
+}

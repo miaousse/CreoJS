@@ -1,0 +1,26 @@
+.custom-tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: var( --link-hover: #333;);
+    padding: 5px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 100;
+    pointer-events: none;
+}
+
+button:hover .custom-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+button img {
+    pointer-events: none;
+}
