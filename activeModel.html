@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+    <head>
+		<title>
+			paramètres modèle
+		</title>
+		<script
+			src="./js/creojs.js"
+		>
+		</script>
+		<script
+			type="text/creojs"
+			src="./js/browser.creojs"
+		>
+		</script>
+		<script
+			type="text/creojs"
+			src="./js/utils.creojs"
+		>
+		</script>
+		<script
+			src="./js/currentModel.js"
+		>
+		</script>
+		<script
+			type="text/creojs"
+			src="./js/currentModel2.creojs"
+		>
+		</script>
+		<script
+			type="text/creojs"
+			src="./js/exportPdfStep.creojs"
+		>
+		</script>
+		<script
+			type="text/creojs"
+			src="./js/changeColor.creojs"
+		>
+		</script>
+		<link
+			rel="stylesheet"
+			href="./css/general.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/currentModel.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/icons.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/colorsVariables.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/buttons.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/navbar.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/tables.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/inputs.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/activeModelTables.css"
+		>
+		<link
+			rel="stylesheet"
+			href="./css/activeModelInputs.css"
+		>
+	</head>
+	<body
+		onload="CreoJS.$ADD_ON_LOAD (initialize)"
+	>
+		<nav
+			id="main-navbar"
+			class="navbar"
+		>
+		</nav>
+		<script
+			src="./js/navbarButtons.js"
+		>
+		</script>
+		<script
+			src="./js/navbarGenerator.js"
+		>
+		</script>
+			<span
+				id="name"
+			>
+			</span>
+			<img
+				id="copyModel"
+				class="actionImage"
+				src="./assets/copy.png"
+				alt="Copier nom"
+				title="Copier le nom de fichier dans le presse papier"
+				onclick="copyToClipboard('name')"
+				onmouseover="this.src='./assets/copyHover.png'"
+				onmouseout="this.src='./assets/copy.png'"
+			>
+			Copier Nom
+			<div
+				id="model"
+			>
+				<table
+					id="modelParameters"
+				>
+					<tr>
+						<th>Parametres</th>
+						<th>Valeur</th>
+						<th>Action</th>
+					</tr>
+					<tr>
+						<td
+							class="parameterName"
+						>
+							DS1
+						</td>
+						<td
+						>
+							<input
+								class="parameterValue"
+								onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value);"
+								type="text"
+								id="DS1"
+							>
+						</td>
+						<td>
+							<img
+								id="copyDS1"
+								class="actionImage"
+								src="./assets/copy.png"
+								alt="Clear"
+								title="Copier DS1 dans le presse papier"
+								onclick="copyToClipboard('DS1')"
+								onmouseover="this.src='./assets/copyHover.png'"
+								onmouseout="this.src='./assets/copy.png'"
+							>
+							Copier DS
+							<br>
+							<img
+								id="uppercaseDS1"
+								class="actionImage"
+								src="./assets/uppercase.png"
+								alt="Clear"
+								title="Changer la casse"
+								onclick="handleUppercase()"
+								onmouseover="this.src='./assets/uppercaseHover.png'"
+								onmouseout="this.src='./assets/uppercase.png'"
+							>
+							Changer Casse
+						</td>
+					</tr>
+										<tr>
+						<td
+								class="parameterName"
+						>
+							DS2
+						</td>
+						<td>
+							<input
+								onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value);"
+								class="parameterValue"
+								type="text"
+								id="DS2"
+							>
+						</td>
+						<td>
+						</td>
+					</tr>
+					<tr>
+						<td
+							class="parameterName"
+						>
+							DS3
+						</td>
+						<td>
+							<input
+								onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value);"
+								class="parameterValue"
+								type="text"
+								id="DS3"
+							>
+						</td>
+						<td>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Indice
+						</td>
+						<td>
+							<input
+								onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value);"
+								class="parameterValue"
+								type="text"
+								id="Indice"
+							>
+						</td>
+						<td>
+							<img
+								id="copyRevision"
+								class="actionImage"
+								src="./assets/copy.png"
+								alt="Clear"
+								title="Copier la révision dans le presse papier"
+								onclick="copyRevision();"
+								onmouseover="this.src='./assets/copyHover.png'"
+								onmouseout="this.src='./assets/copy.png'"
+							>
+							Copier Révision
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Indice Min
+						</td>
+						<td>
+							<input
+								id="Indice_min"
+								onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value);"
+								class="parameterValue"
+								type="number"
+							>
+						</td>
+						<td>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Protection
+						</td>
+						<td>
+							<input
+								onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value);"
+								class="parameterValue"
+								type="text"
+								id="protection"
+							>
+						</td>
+						<td>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Tol Gen
+						</td>
+						<td>
+							<input
+								onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value);"
+								class="parameterValue"
+								type="text"
+								id="Tol_gen"
+							>
+						</td>
+						<td>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							Visiativ
+						</td>
+						<td>
+							<input
+								class="parameterValue"
+								type="text"
+								id="statut"
+								disabled
+							>
+						</td>
+						<td>
+						</td>
+					</tr>
+				</table>
+			</div>
+				<button
+					class="actionButton"
+					onclick="CreoJS.getDrawingLink();">
+					Ouvrir dessin
+				</button>
+				<button
+					class="actionButton"
+					onclick="handleExport('pdf');">
+					Export PDF
+				</button>
+				<button
+					class="actionButton"
+					onclick="handleExport('step');">
+					Export STEP
+				</button>
+				<button
+					class="actionButton"
+					id="purge"
+					onclick="CreoJS.purge();">
+					Purge
+				</button>
+			<!-- </div> -->
+	<div
+		class="button-container"
+	>
+		<button
+			class="actionButton"
+			onclick="CreoJS.assignNewColor('pantone');"
+		>
+			Pantone aleatoire
+		</button>
+		<button
+			class="actionButton"
+			onclick="CreoJS.assignNewColor('ral');"
+		>
+			RAL aléatoire
+		</button>
+		<br>
+		<button
+			class="actionButton"
+			id="ral"
+			onclick="CreoJS.assignRALColor(document.getElementById('ralValue').value)"
+		>
+			RAL
+		</button>
+		<input
+			type="number"
+			id="ralValue"
+			value="1027"
+		>
+		<br>
+		<button
+			class="actionButton"
+			id="enedis"
+			onclick="CreoJS.assignRalEnedis();"
+		>
+			RAL Enedis
+		>
+	</div>
+	<div
+		id="info">
+	</div>
+	<script>
+	const parameterMappings = {
+		'fullname': 'Name',
+		'DS1': 'DS1',
+		'DS2': 'DS2',
+		'DS3': 'DS3',
+		'Indice': 'Indice',
+		'Indice_min': 'Indice_min',
+		'protection': 'protection',
+		'Tol_gen': 'Tol_gen',
+		'statut': 'statut'
+	};
+function fillTable(infos) {
+    try {
+        const infosObj = Object.fromEntries(infos.map(item => [item.name, item.value]));
+        const modelName = infosObj.fullname || 'no model';
+        document.getElementById('name').textContent = modelName;
+
+        Object.entries(infosObj).forEach(([key, value]) => {
+            const inputId = parameterMappings[key];
+            if (inputId) {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    // Special handling for 'statut'
+						input.style.color = 'var(--input-text-visiativ)';
+                    if (inputId === 'statut') {
+                        if (value === '/') {
+                            input.value = "pas dans le PLM";
+							input.style.background = 'var(--input-background-visiativ-red)';
+                        } else {
+                            input.value = value;
+							input.style.background = 'var(--input-background-visiativ-green)';
+                        }
+                    } else if (input.type === 'number' && !isNaN(Number(value))) {
+                        input.value = Number(value);
+                    } else {
+                        input.value = value;
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error filling table:', error);
+    }
+}
+
+
+	function handleUppercase() {
+		const dsValues = ['DS1', 'DS2', 'DS3'].map(id => document.getElementById(id).value);
+		CreoJS.uppercase(...dsValues)
+		.then(() => window.location.reload())
+		.catch(error => console.error('Uppercase error:', error));
+	}
+
+	function initialize() {
+		CreoJS.getModelInfos()
+		.then(fillTable)
+		.catch(error => {
+			<!-- console.error('Initialization error:', error); -->
+			// Create error state object
+			const errorInfos = Object.fromEntries(
+				Object.keys(parameterMappings).map(key => [key, 'Error'])
+			);
+			fillTable(errorInfos);
+		});
+	}
+	document.getElementById('info').textContent = window.width;
+
+function handleExport(type) {
+    const fullName = document.getElementById('name').textContent.trim();
+    const indice = document.getElementById('Indice').value.trim();
+    const indice_min = document.getElementById('Indice_min').value.trim();
+    if (type === 'pdf') {
+        CreoJS.ExportPdf(fullName, indice, indice_min);
+        return;
+    }
+    if (type === 'step') {
+        CreoJS.ExportStep(fullName, indice, indice_min);
+        return;
+    }
+}
+
+	</script>
+</body>
+</html>

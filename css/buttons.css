@@ -13,7 +13,7 @@ button {
 }
 
 button:hover {
-	background-color: var(--background-hover);
+	background-color: var(--button-background-hover);
 	color: var(--button-background);
 	border-color: var(--button-background);
 	transform: scale(1.05);

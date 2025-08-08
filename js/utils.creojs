@@ -1,0 +1,25 @@
+// Shared utility functions for .creojs backend scripts
+
+function getValue(parameter) {
+    try {
+        const valueDiscr = parameter.Value.discr;
+        const valueType = {
+            [pfcParamValueType.PARAM_STRING]: 'StringValue',
+            [pfcParamValueType.PARAM_INTEGER]: 'IntValue',
+            [pfcParamValueType.PARAM_BOOLEAN]: 'BoolValue',
+            [pfcParamValueType.PARAM_DOUBLE]: 'DoubleValue'
+        };
+
+        if (valueDiscr === pfcParamValueType.PARAM_INTEGER) {
+            return parameter.Value.IntValue.toString();
+        }
+
+        const typeProperty = valueType[valueDiscr];
+        return typeProperty && parameter.Value[typeProperty] !== undefined
+            ? parameter.Value[typeProperty].toString()
+            : '';
+    } catch (error) {
+        print(`Erreur dans la fonction getValue:\n${error.message}`);
+        return '';
+    }
+}

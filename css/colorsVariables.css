@@ -10,9 +10,9 @@
   --button-background: rgba(0,84,150,1);
   --button-background-hover: rgba(145,202,238,1);
   --input-background-focus: rgba(253,185,19,.25);
-  --input-background-visiativ-red: '#CE3A34';
-  --input-background-visiativ-green: '#F9FBFF';
-  --input-text-visiativ: '#F2F3FF';
+  --input-background-visiativ-red: #CE3A34;
+  --input-background-visiativ-green: #F9FBFF;
+  --input-text-visiativ: #F2F3FF;
   --highlight-background-green: rgba(76, 175, 80, .25);
   --highlight-background-green-dark: rgba(76, 175, 80, .50);
   --highlight-background-red: #CD3A34;
