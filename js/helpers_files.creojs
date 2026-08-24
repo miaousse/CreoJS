@@ -1,0 +1,80 @@
+/**
+ * helpers_files.creojs
+ * Utilitaires de recherche de fichiers Creo (wrapper autour de session.ListFiles),
+ * mutualisables entre les pages qui listent des fichiers du répertoire de travail
+ * (activeModel, workingDirectories, ...).
+ *
+ * Dépendance : ce fichier suppose qu'une constante globale `session`
+ * (pfcGetCurrentSession()) est déjà déclarée par un script compagnon chargé sur
+ * la même page (ex: activeModel.creojs) — même convention que
+ * helpers_parameters.creojs, qui dépend déjà d'un `model` global existant.
+ */
+
+// Alias texte -> constantes pfcFileListOpt réelles. Centralise la traduction
+// string -> enum (Single Source of Truth) plutôt que d'exposer l'enum brut à
+// chaque appelant.
+const FILE_LIST_OPTIONS = {
+    'all': pfcFileListOpt.FILE_LIST_ALL,
+    'inst': pfcFileListOpt.FILE_LIST_ALL_INST,
+    'latest': pfcFileListOpt.FILE_LIST_LATEST,
+    'latest_inst': pfcFileListOpt.FILE_LIST_LATEST_INST
+};
+
+const DEFAULT_FILE_LIST_TYPE = 'latest';
+
+/**
+ * resolveFileListOption
+ * Traduit un alias texte ("all", "inst", "latest", "latest_inst") en constante
+ * pfcFileListOpt correspondante. Retombe sur l'option par défaut si l'alias est
+ * inconnu, plutôt que de lever une exception qui casserait l'appelant.
+ */
+function resolveFileListOption(type) {
+    const normalizedType = (type || DEFAULT_FILE_LIST_TYPE).toLowerCase();
+    const resolvedOption = FILE_LIST_OPTIONS[normalizedType];
+
+    if (!resolvedOption) {
+        console.error(`Type de listing de fichiers inconnu : "${type}", repli sur "${DEFAULT_FILE_LIST_TYPE}"`);
+        return FILE_LIST_OPTIONS[DEFAULT_FILE_LIST_TYPE];
+    }
+
+    return resolvedOption;
+}
+
+/**
+ * listFiles
+ * Wrapper de session.ListFiles avec un paramètre "type" lisible (chaîne) à la
+ * place de l'enum pfcFileListOpt brut, un filtre par défaut ("*.*") et un
+ * répertoire par défaut (le répertoire de travail courant si path est omis).
+ * Ne lève jamais d'exception : retourne un tableau vide en cas d'échec, pour
+ * éviter d'imposer un try/catch à chaque appelant.
+ */
+function listFiles(filter = '*.*', type = DEFAULT_FILE_LIST_TYPE, path) {
+    const targetPath = path || session.GetCurrentDirectory();
+    const listOption = resolveFileListOption(type);
+
+    try {
+        return session.ListFiles(filter, listOption, targetPath);
+    } catch (error) {
+        return [];
+    }
+}
+
+/**
+ * fileExists
+ * Vrai si au moins un fichier correspond exactement au nom donné (fileName)
+ * dans le répertoire path (répertoire de travail courant si omis).
+ */
+function fileExists(fileName, path) {
+    return listFiles(fileName, DEFAULT_FILE_LIST_TYPE, path).length > 0;
+}
+
+/**
+ * extractFileName
+ * Extrait le nom de fichier (nom + extension, sans chemin ni occurrence de
+ * sauvegarde) à partir d'un chemin complet tel que renvoyé par listFiles, ex:
+ * "C:\...\p0032385.prt.7" -> "p0032385.prt".
+ */
+function extractFileName(filePath) {
+    const fileName = filePath.split('\\').pop();
+    return fileName.replace(/\.\d+$/, '');
+}

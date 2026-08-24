@@ -1,0 +1,58 @@
+function updateOrCreateParameter(name, type, value) {
+    const param = model.GetParam(name);
+    param ? updateParameterValue(param, value) : createParameter(name, type, value);
+}
+
+function getValue(parameter) {
+    try {
+        const valueDiscr = parameter.Value.discr;
+        const valueType = {
+            [pfcParamValueType.PARAM_STRING]: 'StringValue',
+            [pfcParamValueType.PARAM_INTEGER]: 'IntValue',
+            [pfcParamValueType.PARAM_BOOLEAN]: 'BoolValue',
+            [pfcParamValueType.PARAM_DOUBLE]: 'DoubleValue'
+        };
+
+        if (valueDiscr === pfcParamValueType.PARAM_INTEGER) {
+            return parameter.Value.IntValue.toString();
+        }
+
+        const typeProperty = valueType[valueDiscr];
+        return typeProperty && parameter.Value[typeProperty] !== undefined 
+            ? parameter.Value[typeProperty].toString() 
+            : '';
+    } catch (error) {
+        print(`Erreur dans la fonction getValue:\n${error.message}`);
+        return '';
+    }
+}
+
+function createParameter(name, type, value) {
+    const paramType = getValueType(type);
+    const paramValue = createParameterValue(value, paramType);
+    model.CreateParam(name, paramValue);
+}
+
+function getValueType(typeString) {
+    const typeMap = {
+        'String': pfcParamValueType.PARAM_STRING,
+        'Integer': pfcParamValueType.PARAM_INTEGER,
+        'Boolean': pfcParamValueType.PARAM_BOOLEAN,
+        'Double': pfcParamValueType.PARAM_DOUBLE
+    };
+    return typeMap[typeString];
+}
+function createParameterValue(value, type) {
+    const createFunctions = {
+        [pfcParamValueType.PARAM_STRING]: pfcCreateStringParamValue,
+        [pfcParamValueType.PARAM_INTEGER]: pfcCreateIntParamValue,
+        [pfcParamValueType.PARAM_BOOLEAN]: pfcCreateBoolParamValue,
+        [pfcParamValueType.PARAM_DOUBLE]: pfcCreateDoubleParamValue
+    };
+    return createFunctions[type](value);
+}
+
+function updateParameterValue(parameter, newValue){
+	parameter.Value = createParameterValue(newValue,parameter.Value.discr);
+}
+

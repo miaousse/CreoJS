@@ -1,0 +1,222 @@
+const session = pfcGetCurrentSession();
+const model = session.CurrentModel;
+
+const modelInfos = {
+    'fullname': '/',
+    'modelType': 'UNKNOWN',
+    'DS1': '/',
+    'DS2': '/',
+    'DS3': '/',
+    'Indice': '/',
+    'Indice_min': '/',
+    'Tol_gen': '/',
+    'protection': '/',
+    'statut': '/',
+    'isDrawing': false,
+    'hasDrawing': false
+};
+
+/**
+ * getModel
+ * Retourne le solide (pièce/assemblage) associé au modèle actif de la session,
+ * quel que soit le type du modèle actif (dessin, pièce ou assemblage).
+ */
+function getModel() {
+    try {
+        if (!model) return null;
+
+        const modelTypeHandlers = {
+            [pfcModelType.MDL_DRAWING]: () => model.GetCurrentSolid(),
+            [pfcModelType.MDL_PART]: () => session.GetActiveModel(),
+            [pfcModelType.MDL_ASSEMBLY]: () => session.GetActiveModel()
+        };
+
+        return modelTypeHandlers[model.Type]?.() || null;
+    } catch (error) {
+        console.error('Error fetching model:', error);
+        return null;
+    }
+}
+
+/**
+ * getModelType
+ * Retourne "2D" ou "3D" selon le type du modèle actif de la session, à des fins
+ * d'affichage uniquement (n'utilise pas le solide résolu par getModel()).
+ */
+function getModelType() {
+    try {
+        if (!model) return "NONE";
+
+        const modelTypeHandlers = {
+            [pfcModelType.MDL_DRAWING]: () => "2D",
+            [pfcModelType.MDL_PART]: () => "3D",
+            [pfcModelType.MDL_ASSEMBLY]: () => "3D"
+        };
+
+        return modelTypeHandlers[model.Type]?.() || "UNKNOWN";
+    } catch (error) {
+        return "ERROR";
+    }
+}
+
+/**
+ * isDrawingInSession
+ * Vrai si un dessin partageant le même nom de base que fullName est déjà chargé
+ * dans la session Creo.
+ */
+function isDrawingInSession(fullName) {
+    try {
+        const drawingsInSession = session.ListModelsByType(pfcModelType.MDL_DRAWING);
+        return drawingsInSession.some(drawing => drawing.FullName === fullName);
+    } catch (error) {
+        return false;
+    }
+}
+
+/**
+ * isDrawingInDirectory
+ * Vrai si un fichier ".drw" nommé d'après fullName existe dans le répertoire de
+ * travail courant. S'appuie sur fileExists (helpers_files.creojs), qui interroge
+ * ListFiles avec le nom de fichier exact plutôt que de lister tout le répertoire
+ * et parser les chemins retournés (ceux-ci incluent l'occurrence de sauvegarde,
+ * ex: "C:\...\p0032385.drw.7").
+ */
+function isDrawingInDirectory(fullName) {
+    return fileExists(`${fullName.toLowerCase()}.drw`);
+}
+
+/**
+ * getDrawingAvailability
+ * Point unique de décision (Single Source of Truth) pour savoir si les actions liées
+ * au dessin (bouton "2D", export PDF) ont un sens pour le modèle actif :
+ *   - isDrawing: le modèle actif EST déjà le dessin (rien à ouvrir/lier).
+ *   - hasDrawing: un dessin associé existe (en session ou dans le répertoire de travail).
+ * Utilisée à la fois pour piloter l'état des boutons côté navigateur et pour
+ * sécuriser getDrawingLink() contre un appel sur un dessin inexistant.
+ */
+function getDrawingAvailability(targetModel) {
+    const isDrawing = model.Type === pfcModelType.MDL_DRAWING;
+    if (isDrawing) return { isDrawing: true, hasDrawing: false };
+
+    if (!targetModel) return { isDrawing: false, hasDrawing: false };
+
+    const fullName = targetModel.FullName;
+    const hasDrawing = isDrawingInSession(fullName) || isDrawingInDirectory(fullName);
+
+    return { isDrawing: false, hasDrawing };
+}
+
+/**
+ * getModelInfos
+ * Construit la liste des informations affichées dans le tableau des paramètres,
+ * y compris la disponibilité du dessin associé (isDrawing / hasDrawing).
+ */
+function getModelInfos() {
+    return new Promise(resolve => {
+        let defaultResolution = Object.entries(modelInfos).map(([name, value]) => ({
+            name,
+            value: name === 'fullname' ? 'no model' : value
+        }));
+
+        const currentType = getModelType();
+        const targetModel = getModel();
+
+        if (!targetModel) {
+            resolve(defaultResolution);
+            return;
+        }
+
+        try {
+            Object.keys(modelInfos).forEach(name => {
+                try {
+                    if (name === 'fullname') {
+                        modelInfos[name] = targetModel.InstanceName || '/';
+                    } else if (name === 'modelType') {
+                        modelInfos[name] = currentType;
+                    } else if (name === 'isDrawing' || name === 'hasDrawing') {
+                        // Calculés ensemble ci-dessous via getDrawingAvailability (SSOT).
+                    } else {
+                        const param = targetModel.GetParam(name.toUpperCase());
+                        modelInfos[name] = getValue(param);
+                    }
+                } catch (error) {
+                    modelInfos[name] = '/';
+                }
+            });
+
+            const drawingAvailability = getDrawingAvailability(targetModel);
+            modelInfos.isDrawing = drawingAvailability.isDrawing;
+            modelInfos.hasDrawing = drawingAvailability.hasDrawing;
+
+            const result = Object.entries(modelInfos).map(([name, value]) => ({
+                name,
+                value
+            }));
+
+            resolve(result);
+        } catch (error) {
+            console.error('Error in getModelInfos:', error);
+            resolve(defaultResolution);
+        }
+    });
+}
+
+/**
+ * getDrawingLink
+ * Ouvre et affiche le dessin associé au modèle actif (via displayModel, voir
+ * helpers_models.creojs). Ne fait rien si le modèle actif est déjà le dessin,
+ * ou si aucun dessin associé n'est disponible ; alerte l'utilisateur si
+ * l'ouverture échoue malgré tout (fichier supprimé entre-temps, par exemple).
+ */
+function getDrawingLink() {
+    const targetModel = getModel();
+    if (!targetModel) return;
+
+    const availability = getDrawingAvailability(targetModel);
+    if (availability.isDrawing || !availability.hasDrawing) return;
+
+    const drawingOpened = displayModel(targetModel.FullName + '.drw');
+    if (!drawingOpened) Browser.alert('Fichier non existant');
+}
+
+/**
+ * incrementVersion
+ * Retourne la lettre d'indice suivante ("-" -> "A", "A" -> "B", ...).
+ */
+function incrementVersion(value) {
+    if (value === "-") return "A";
+    return String.fromCharCode(value.charCodeAt(0) + 1);
+}
+
+/**
+ * updateParameterValueFromHTML
+ * Met à jour, depuis une saisie HTML, la valeur d'un paramètre du modèle actif
+ * et rafraîchit la fenêtre courante.
+ */
+function updateParameterValueFromHTML(parameterName, newValue) {
+    const targetModel = getModel();
+    const parameter = targetModel.GetParam(parameterName.toUpperCase());
+    updateParameterValue(parameter, newValue);
+    session.CurrentWindow.Repaint();
+}
+
+/**
+ * uppercase
+ * Normalise (suppression des accents) et met à jour les paramètres DS1/DS2/DS3.
+ */
+function uppercase(inputDS1, inputDS2, inputDS3) {
+    const DS1 = model.GetParam('DS1');
+    const DS2 = model.GetParam('DS2');
+    const DS3 = model.GetParam('DS3');
+    updateParameterValue(DS1, normalizeNFD(inputDS1));
+    updateParameterValue(DS2, normalizeNFD(inputDS2));
+    updateParameterValue(DS3, normalizeNFD(inputDS3));
+}
+
+/**
+ * purge
+ * Lance la macro Creo de purge du répertoire de travail.
+ */
+function purge() {
+    session.RunMacro('@SYSTEMpurge;');
+}

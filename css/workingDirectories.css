@@ -1,0 +1,94 @@
+/* ============================================================
+   WORKING DIRECTORIES — styles propres à cette page
+   (dépend de main.css pour les tokens et composants communs)
+   ============================================================ */
+
+#directory-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2px;
+    border-radius:var(--radius-lg);
+    border: 1px solid var(--border);
+}
+
+#directory-form input[type="text"] {
+    width: 25ch;
+}
+
+#directory-form .action-icon-btn .material-symbols-outlined {
+    font-size: 1rem;
+}
+
+/* Ligne répertoire courant */
+tr.current-working-directory {
+    background-color: var(--accent-light) !important;
+}
+
+tr.current-working-directory td {
+    color: var(--accent);
+}
+
+/* Icône active (répertoire courant) */
+.action-icon-btn.btn-active {
+    color: var(--success);
+}
+
+.action-icon-btn.btn-active:hover {
+    background: var(--success-light);
+}
+
+/* ============================================================
+   COMPACTAGE — spécifique à cette page (densité et hauteurs)
+   ============================================================ */
+
+.info-item {
+    padding: 8px;
+}
+
+.filter {
+    padding: 2px 3px;
+}
+
+.filter-checkbox {
+    padding: 3px 10px;
+}
+#modelFilenameFilter {
+    width : 25ch;
+    padding: 8px 16px;
+}
+
+thead th {
+    padding: 3px 6px;
+}
+
+.actions-cell {
+    padding: 2px 8px;
+}
+
+.material-symbols-outlined {
+    font-size: 18px;
+}
+
+/* Largeur fixe pour les colonnes d'action (alignement parfait) */
+table th.col-action, 
+table td.col-action {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    text-align: center;
+    padding: 4px;
+    white-space: nowrap;
+}
+
+.icon-cell-inner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}

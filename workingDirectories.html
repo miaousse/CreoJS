@@ -1,0 +1,103 @@
+<html>
+    <head>
+        <title>R&eacute;pertoires de travail</title>
+        <script src="./js/creojs.js"></script>
+        <script type="text/creojs" src="./js/browser.creojs"></script>
+        <script src="./js/mainNavbarButtons.js"></script>
+        <script src="./js/mainNavbarGenerator.js"></script>
+        <script type="text/creojs" src="./js/helpers_files.creojs"></script>
+        <script type="text/creojs" src="./js/helpers_models.creojs"></script>
+        <script type="text/creojs" src="./js/workingDirectories.creojs"></script>
+        <link rel="stylesheet" href="./css/main.css">
+        <link rel="stylesheet" href="./css/workingDirectories.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    </head>
+    <body onload="CreoJS.$ADD_ON_LOAD(initialize)">
+        <nav id="main-navbar" class="navbar"></nav>
+        <div class="info-item">
+            <p class="section-label">R&eacute;pertoires de travail</p>
+            <div id="directory-form">
+                <input type="text" id="path-input" placeholder="Chemin complet">
+                <button class="action-icon-btn" title="Parcourir et choisir un répertoire" onclick="addChoosenDirectory()">
+                    <span class="material-symbols-outlined">folder_open</span>
+                </button>
+                <input type="text" id="description-input" placeholder="Description">
+                <button class="action-icon-btn" title="Ajouter à la liste" onclick="addDirectory()">
+                    <span class="material-symbols-outlined">note_add</span>
+                </button>
+            </div>
+            <div id="directory-list">
+                <table id="directory-list-table">
+                    <thead>
+                        <tr>
+                            <th class="col-action"></th>
+                            <th>Description</th>
+                            <th>Chemin</th>
+                        </tr>
+                    </thead>
+                    <tbody id="directory-list-table-body">
+                    <!-- Les lignes seront insérées ici -->
+                    </tbody>
+                </table>
+                <p id="directory-list-empty" class="muted" style="padding:12px 0; display:none;">Aucun répertoire enregistré.</p>
+            </div>
+        </div>
+        <div class="info-item">
+            <p class="section-label">Liste des fichiers du répertoire courant</p>
+            <div class="filter">
+                <input type="text" id="modelFilenameFilter" placeholder="Rechercher..." >
+                <div class="model-type-filters type-filters">
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="modelP00Filter" value="P00">P00
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" value="drw">DRW
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" value="prt">PRT
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" value="asm">ASM
+                    </label>
+                </div>
+            </div>
+            <div id="directory-models">
+                <table id="file-list">
+                    <thead>
+                        <tr>
+                            <th class="col-action">2D</th>
+                            <th class="col-action">3D</th>
+                            <th>MODELE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="directory-models-table-body">
+                    <!-- Les lignes seront insérées ici -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <script>
+        function initialize() {
+        // Appel immédiat : construit le tableau dès le chargement
+            createDirectoryList();
+            refreshDirectoryModels();
+            setupDirectoryFilters();
+        }
+
+        function addChoosenDirectory() {
+            CreoJS.getPath()
+                .then(function(chosenPath) {
+                    document.getElementById('path-input').value = chosenPath;
+                    const desc = document.getElementById('description-input');
+                    desc.focus();
+                })
+                .catch(function(error) {
+                    console.error('Error getting path:', error);
+                });
+        }
+    </script>
+    <script src="./js/common.js"></script>
+    <script src="./js/workingDirectories.js"></script>
+  </body>
+</html>

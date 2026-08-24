@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Models List</title>
+    <link rel="stylesheet" href="./css/general.css">
+    <link rel="stylesheet" href="./css/colorsVariables.css">
+    <link rel="stylesheet" href="./css/navbar.css">
+    <link rel="stylesheet" href="./css/buttons.css">
+    <link rel="stylesheet" href="./css/tables.css">
+    <link rel="stylesheet" href="./css/icons.css">
+    <link rel="stylesheet" href="./css/model-icons.css">
+    <script type="text/creojs" src="./js/model.creojs"></script>
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-buttons">
+            <button class="actionButton" onclick="saveNote()">Sauver Note</button>
+            <button class="actionButton">Notes sauvées</button>
+            <button class="actionButton" onclick="closeNote()">Fermer Note</button>
+        </div>
+    </div>
+
+    <div class="entry-form" id="entry-form">
+        <!-- Placeholder for entry form to be defined later -->
+    </div>
+
+    <table id="modelsTable">
+        <thead>
+            <tr>
+                <th>Actions</th>
+                <th>Number</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody id="modelsTableBody"></tbody>
+    </table>
+
+    <script src="./js/models.js"></script>
+</body>
+</html>

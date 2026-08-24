@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion Table de Révision</title>
+    <script src="./js/creojs.js"></script>
+    <script src="./js/trigrams.js"></script>
+    <script type="text/creojs" src="./js/browser.creojs"></script>
+    <script type="text/creojs" src="./js/drawing.creojs"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            padding: 10px;
+            background-color: #f4f7f9;
+            font-size: 12px;
+        }
+
+        .container {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 5px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: 400;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-add {
+            background: #34a853;
+            color: white;
+        }
+
+        .btn-update {
+            background: #4285f4;
+            color: white;
+        }
+
+        h3 {
+            font-size: 13px;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        h3 .material-symbols-outlined {
+            font-size: 16px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 586px;
+            margin-top: 8px;
+            table-layout: fixed;
+        }
+
+        tr {
+            border-bottom: 1px solid rgb(231, 231, 231);
+        }
+
+        th {
+            padding: 4px;
+            text-align: center;
+            background-color: #f8f9fa;
+            color: #5f6368;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 2px 4px;
+            vertical-align: top;
+        }
+
+        /* Colonnes fixes - pas de retour à la ligne */
+        td:nth-child(1),
+        td:nth-child(2),
+        td:nth-child(3),
+        td:nth-child(4) {
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        /* Centrage colonnes Mod. Ver. Date */
+        td:nth-child(2),
+        td:nth-child(3),
+        td:nth-child(4) {
+            text-align: center;
+        }
+
+        /* Description : retour à la ligne */
+        td:nth-child(5) {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fdfdfd;
+        }
+
+        input {
+            width: 95%;
+            border: none;
+            background: transparent;
+            padding: 2px;
+            font-size: 12px;
+        }
+
+        .input-locked {
+            background-color: #eeeeee !important;
+            color: #555;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .desc-input {
+            width: 95%;
+            border: none;
+            background: transparent;
+            padding: 2px;
+            font-size: 12px;
+            font-family: 'Segoe UI', sans-serif;
+            resize: none;
+            overflow: hidden;
+            word-break: break-word;
+            display: block;
+        }
+
+        .status-msg {
+            margin-top: 8px;
+            font-size: 0.85em;
+            color: #666;
+            font-style: italic;
+        }
+
+        .select-trigram {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 2px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 12px;
+            outline: none;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .select-trigram option {
+            color: black;
+        }
+    </style>
+</head>
+
+<body onload="CreoJS.$ADD_ON_LOAD(initialize);">
+    <div class="container">
+        <h3><span class="material-symbols-outlined">history</span> Révisions du Dessin</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5ch;">Ind.</th>
+                    <th style="width: 5ch;">Mod.</th>
+                    <th style="width: 10ch;">Ver.</th>
+                    <th style="width: 12ch;">Date</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody id="revBody"></tbody>
+        </table>
+        <div id="status" class="status-msg">...</div>
+        <div class="controls">
+            <button class="btn btn-add" onclick="addNewRow()"><span class="material-symbols-outlined">add</span> Ligne</button>
+            <button class="btn btn-update" onclick="applyToCreo()"><span class="material-symbols-outlined">save</span> Appliquer</button>
+        </div>
+    </div>
+
+    <script>
+        function initialize() {
+            CreoJS.retrieveModsTableData().then(data => {
+                if (!data) {
+                    // window.alert("ERREUR : Aucune donnée reçue.");
+                    return;
+                }
+
+                const tbody = document.getElementById('revBody');
+                tbody.innerHTML = '';
+
+                if (Array.isArray(data)) {
+                    data.forEach(r => {
+                        if (r.ind || r.mod || r.desc) {
+                            addNewRow(r);
+                        }
+                    });
+                }
+
+                if (data.length > 0) {
+                    modelContext = data[data.length - 1];
+                }
+
+                debugTableWidth();
+
+            }).catch(err => {
+                window.alert("EXCEPTION : " + err);
+            });
+        }
+
+        function addNewRow(data = null) {
+            const tbody = document.getElementById('revBody');
+            const row = tbody.insertRow(-1);
+
+            const info = data || {
+                ind: modelContext?.rev || '',
+                mod: modelContext?.drawer || '',
+                ver: '',
+                date: new Date().toLocaleDateString('fr-FR'),
+                desc: ''
+            };
+
+            let selectHtml = `<select class="select-trigram">`;
+            selectHtml += `<option value=""></option>`;
+            USERS.forEach(user => {
+                const isSelected = (info.ver === user.trigram) ? 'selected' : '';
+                selectHtml += `<option value="${user.trigram}" ${isSelected}>${user.trigram} - ${user.name}</option>`;
+            });
+            selectHtml += `</select>`;
+
+            row.innerHTML = `
+        <td><input type="text" class="input-locked" value="${info.ind}" tabindex="-1"></td>
+        <td><input type="text" value="${info.mod}"></td>
+        <td>${selectHtml}</td>
+        <td><input type="text" value="${info.date}"></td>
+        <td><textarea class="desc-input" rows="1">${info.desc}</textarea></td>
+    `;
+
+            // Auto-resize du textarea selon le contenu
+            const textarea = row.querySelector('.desc-input');
+            autoResize(textarea);
+            textarea.addEventListener('input', () => autoResize(textarea));
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        function applyToCreo() {
+            const rows = document.querySelectorAll('#revBody tr');
+            const tableData = [];
+
+            rows.forEach(r => {
+                const inputs = r.querySelectorAll('input');
+                const selectVerif = r.querySelector('select');
+                const textarea = r.querySelector('textarea');
+
+                tableData.push({
+                    ind: inputs[0].value,
+                    mod: inputs[1].value,
+                    ver: selectVerif.value,
+                    date: inputs[2].value,
+                    desc: textarea ? textarea.value : ''
+                });
+            });
+
+            CreoJS.updateRevisionTableInCreo(tableData).then(response => {
+                document.getElementById('status').textContent = response;
+                initialize();
+            }).catch(err => {
+                window.alert("Erreur lors de la mise à jour : " + err);
+            });
+        }
+
+        function debugTableWidth() {
+            const table = document.querySelector('table');
+            const status = document.getElementById('status');
+            status.textContent = `Largeur table : ${table.offsetWidth}px`;
+        }
+    </script>
+</body>
+
+</html>

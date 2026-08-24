@@ -1,0 +1,64 @@
+const session = pfcGetCurrentSession();
+function getInSessionModels() {
+	const validTypes = new Set([
+		pfcModelType.MDL_ASSEMBLY,
+		pfcModelType.MDL_PART,
+		pfcModelType.MDL_DRAWING
+	]);
+	const models = session.ListModels();
+	const inSessionModels = models.filter(model => validTypes.has(model.Type));
+	if (inSessionModels.length === 0) {
+		return [];
+	}
+	return inSessionModels.map(model => {
+		let ds1Value = 'non def';
+		if (model.Type === pfcModelType.MDL_DRAWING) {
+			try {
+				ds1Value = model.GetCurrentSolid()?.GetParam('DS1')?.Value.StringValue || 'non def';
+			} catch (e) {
+				ds1Value = 'non def';
+			}
+		} else {
+			ds1Value = model.GetParam('DS1')?.Value.StringValue || 'non def';
+		}
+		let revision  = '-'; 
+		if (model.FileName.toLowerCase().startsWith('p00')) {
+			try {
+				const indice = model.GetParam('INDICE')?.Value.StringValue || 'non def';
+				const indiceMin = model.GetParam('INDICE_MIN')?.Value.StringValue || 'non def';
+				if (indice !== 'non def' || indiceMin !== 'non def') {
+					revision = `${indice}${indiceMin}`;
+				}
+			} catch (e) {
+				revision = '-';
+			}
+		}
+		const origin = model.Origin || '';
+		const directoryPath = origin.substring(0, origin.lastIndexOf('\\')) || origin;
+		return {
+			filename: model.FileName,
+			ds1: ds1Value,
+			revision: revision,
+			directory: directoryPath,
+			isModified: model.IsModified,
+			type: model.Type // Optional: include model type for filtering
+		};
+	});
+}
+
+function SaveModel(model) {
+	const modelToErase  = session.GetModelFromFileName(model);
+	modelToErase.Save();
+}
+
+function EraseModel(model) {
+	const modelToErase  = session.GetModelFromFileName(model);
+	modelToErase.EraseWithDependencies();
+}
+function DisplayModel(model) {
+	const modelToDisplay  = session.GetModelFromFileName(model);
+	modelToDisplay.DisplayInNewWindow();
+	const modelWindow = session.GetModelWindow(modelToDisplay);
+	modelWindow.Activate();
+}
+

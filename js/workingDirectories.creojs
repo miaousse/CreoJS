@@ -1,0 +1,107 @@
+const session = pfcGetCurrentSession();
+
+/**
+ * changeDir
+ * Change le répertoire de travail courant de la session Creo.
+ */
+function changeDir(path) {
+    session.ChangeDirectory(path);
+}
+
+/**
+ * getCurrentDirectory
+ * Retourne le répertoire de travail courant de la session Creo.
+ */
+function getCurrentDirectory() {
+    return session.GetCurrentDirectory();
+}
+
+/**
+ * getPath
+ * Ouvre la boîte de dialogue Creo de sélection de répertoire et retourne le
+ * chemin choisi par l'utilisateur (répertoire courant par défaut).
+ */
+function getPath() {
+    const baseDirectory = session.GetCurrentDirectory();
+
+    const dirSelectionOptions = pfcDirectorySelectionOptions.Create();
+    dirSelectionOptions.DefaultPath = baseDirectory;
+    dirSelectionOptions.DialogLabel = 'Choix du répertoire';
+
+    return session.UISelectDirectory(dirSelectionOptions);
+}
+
+/**
+ * registerModelFile
+ * Enregistre (mutation de modelsByName) un fichier trouvé dans le répertoire :
+ * crée l'entrée du modèle si besoin, puis met à jour has3D/type3D pour un
+ * fichier prt/asm, ou hasDrawing pour un fichier drw.
+ */
+function registerModelFile(file, type, modelsByName) {
+    const fileName = extractFileName(file);
+    const baseName = fileName.substring(0, fileName.lastIndexOf('.'));
+
+    if (!modelsByName[baseName]) {
+        modelsByName[baseName] = { name: baseName, has3D: false, type3D: null, hasDrawing: false };
+    }
+
+    if (type === 'drw') {
+        modelsByName[baseName].hasDrawing = true;
+    } else {
+        modelsByName[baseName].has3D = true;
+        modelsByName[baseName].type3D = type;
+    }
+}
+
+/**
+ * registerModelFiles
+ * Enregistre chaque fichier de la liste donnée dans modelsByName via
+ * registerModelFile.
+ */
+function registerModelFiles(files, type, modelsByName) {
+    files.forEach(file => registerModelFile(file, type, modelsByName));
+}
+
+/**
+ * compareModelsByName
+ * Comparateur alphabétique (ordre croissant) sur le nom de modèle.
+ */
+function compareModelsByName(a, b) {
+    if (a.name < b.name) return -1;
+    if (a.name > b.name) return 1;
+    return 0;
+}
+
+/**
+ * listDirectoryModels
+ * Liste les modèles 3D (prt/asm) et dessins (drw) du répertoire donné,
+ * regroupés par nom de base, avec pour chacun la présence (et le type) du 3D
+ * et la présence du dessin associé. S'appuie sur listFiles/extractFileName
+ * (helpers_files.creojs) : le filtrage par extension se fait directement via
+ * le filtre de listFiles, plus besoin de re-tester chaque fichier après coup.
+ */
+function listDirectoryModels(path) {
+    const modelsByName = {};
+
+    registerModelFiles(listFiles('*.prt', 'latest', path), 'prt', modelsByName);
+    registerModelFiles(listFiles('*.asm', 'latest', path), 'asm', modelsByName);
+    registerModelFiles(listFiles('*.drw', 'latest', path), 'drw', modelsByName);
+
+    return Object.values(modelsByName).sort(compareModelsByName);
+}
+
+/**
+ * open2D
+ * Ouvre et affiche le dessin correspondant à baseName (sans extension).
+ */
+function open2D(baseName) {
+    displayModel(baseName + '.drw');
+}
+
+/**
+ * open3D
+ * Ouvre et affiche le modèle 3D correspondant à fileName (avec extension).
+ */
+function open3D(fileName) {
+    displayModel(fileName);
+}

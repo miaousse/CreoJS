@@ -1,0 +1,65 @@
+/**
+ * helpers_models.creojs
+ * Utilitaires d'ouverture/activation de modèles Creo : résolution depuis la
+ * session ou depuis le disque, affichage, activation de la fenêtre associée.
+ * Mutualise un pattern répété à l'identique dans activeModel.creojs et
+ * workingDirectories.creojs (getDrawingLink, open2D, open3D, activateWindow).
+ *
+ * Dépendance : ce fichier suppose qu'une constante globale `session`
+ * (pfcGetCurrentSession()) est déjà déclarée par un script compagnon chargé
+ * sur la même page — même convention que helpers_parameters.creojs et
+ * helpers_files.creojs.
+ */
+
+/**
+ * activateWindow
+ * Active et rafraîchit la fenêtre Creo affichant le modèle dont le nom de
+ * fichier correspond à modelFileName. Ne fait rien si aucune fenêtre ne
+ * correspond.
+ */
+function activateWindow(modelFileName) {
+    session.ListWindows().forEach(window => {
+        if (window.Model && window.Model.FileName === modelFileName) {
+            window.Activate();
+            window.Refresh();
+        }
+    });
+}
+
+/**
+ * getOrOpenModel
+ * Résout le modèle Creo correspondant à fileName (nom + extension, ex:
+ * "P0032692.drw") : le retourne s'il est déjà en session, sinon tente de
+ * l'ouvrir depuis le disque. Retourne null (sans lever d'exception) si le
+ * fichier n'existe pas ou si l'ouverture échoue.
+ */
+function getOrOpenModel(fileName) {
+    try {
+        const modelDescriptor = pfcModelDescriptor.CreateFromFileName(fileName);
+        let targetModel = session.GetModel(modelDescriptor.InstanceName, modelDescriptor.Type);
+
+        if (!targetModel) {
+            session.OpenFile(modelDescriptor);
+            targetModel = session.GetModel(modelDescriptor.InstanceName, modelDescriptor.Type);
+        }
+
+        return targetModel || null;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * displayModel
+ * Affiche le modèle correspondant à fileName (résolu/ouvert via
+ * getOrOpenModel) et active sa fenêtre. Retourne true si le modèle a bien été
+ * affiché, false sinon (fichier introuvable, échec d'ouverture...).
+ */
+function displayModel(fileName) {
+    const targetModel = getOrOpenModel(fileName);
+    if (!targetModel) return false;
+
+    targetModel.Display();
+    activateWindow(targetModel.FileName);
+    return true;
+}

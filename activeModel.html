@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Paramètres modèle</title>
+        <script src="./js/creojs.js"></script>
+        <script type="text/creojs" src="./js/browser.creojs"></script>
+        <script src="./js/activeModel.js"></script>
+        <script src="./js/mainNavbarButtons.js"></script>
+        <script src="./js/mainNavbarGenerator.js"></script>
+        <script type="text/creojs" src="./js/helpers_files.creojs"></script>
+        <script type="text/creojs" src="./js/helpers_models.creojs"></script>
+        <script type="text/creojs" src="./js/helpers_parameters.creojs"></script>
+        <script type="text/creojs" src="./js/activeModel.creojs"></script>
+        <script type="text/creojs" src="./js/activeModelExport.creojs"></script>
+        <script type="text/creojs" src="./js/activeModelColor.creojs"></script>
+        <link rel="stylesheet" href="./css/main.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    </head>
+    <body onload="CreoJS.$ADD_ON_LOAD(initialize);">
+        <nav id="main-navbar" class="navbar"></nav>
+        <div id="model" style="padding: 0 24px;">
+            <table id="modelParameters" style="width: auto;">
+                <thead>
+                    <tr>
+                        <th>Paramètre</th>
+                        <th>Valeur</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="parameterName">Modèle</td>
+                        <td >
+                            <div style="display: flex; align-items: center; background: #f1f3f4; padding: 10px; border-radius: 8px;">
+                                <span id="modelIcon" class="material-symbols-outlined" style="margin-right: 10px; font-size: 24px;"></span>
+                                <input type="text" id="name" readonly style="border: none; background: transparent; font-weight: bold; font-size: 1.1em; width: 100%;">
+                            </div>
+                            <!--<input type="text" id="name" class="parameterValue model-display-input" readonly>
+                            -->
+                        </td>
+                        <td >
+                            <div class="actions-cell">
+                                <button class="action-icon-btn" onclick="copyToClipboard('name')">
+                                    <span class="material-symbols-outlined">content_copy</span>
+                                </button>
+                                <button class="action-icon-btn" id="btn2D" title="Voir la mise en plan" onclick="CreoJS.getDrawingLink();">
+                                    <span class="material-symbols-outlined">2d</span>
+                                </button>
+                                <button class="action-icon-btn" id="btnPdf" onclick="handleExport('pdf')" title="PDF">
+                                    <span class="material-symbols-outlined">picture_as_pdf</span>
+                                </button>
+                                <button class="action-icon-btn" onclick="handleExport('step');" title="STEP">
+                                    <span class="material-symbols-outlined">file_export</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="parameterName">DS1</td>
+                        <td>
+                            <input class="parameterValue text-uppercase" onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value.toUpperCase());" type="text" id="DS1">
+                        </td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="action-icon-btn" title="Copier DS1" onclick="copyToClipboard('DS1')">
+                                    <span class="material-symbols-outlined">content_copy</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="parameterName">DS2</td>
+                        <td>
+                            <input onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value.toUpperCase());" class="parameterValue text-uppercase" type="text" id="DS2">
+                        </td>
+                        <td>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="parameterName">DS3</td>
+                        <td>
+                            <input oninput="this.value = normalizeNFD(this.value);" onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value.toUpperCase());" class="parameterValue text-uppercase" type="text" id="DS3">
+                        </td>
+                        <td>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="parameterName">Indice</td>
+                        <td>
+                            <div class="indice-container">
+                                <input onchange="handleChangeMajorRevision(this.id, this.value.toUpperCase())" class="parameterValue text-uppercase" type="text" id="Indice" placeholder="Ind.">
+                                <input id="Indice_min" onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value);" class="parameterValue" type="number" placeholder="Min">
+                            </div>
+                        </td>
+                        <td>
+                            <button class="action-icon-btn" title="Copier la révision" onclick="copyRevision();">
+                                <span class="material-symbols-outlined">content_copy</span>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="parameterName">Protection</td>
+                        <td>
+                            <input onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value);" class="parameterValue" type="text" id="protection">
+                        </td>
+                        <td>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="parameterName">Tol. Gen.</td>
+                        <td>
+                            <input onchange="CreoJS.updateParameterValueFromHTML(this.id, this.value);" class="parameterValue" type="text" id="Tol_gen">
+                        </td>
+                        <td>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="button-container">
+            <button class="actionButton" id="purge" onclick="CreoJS.purge();">Purge Répertoire</button>
+        </div>
+        <div class="button-container">
+        <button class="actionButton" onclick="CreoJS.assignNewColor('lightral');">RAL aléatoire</button>
+        <div class="flex-center gap-sm">
+            <input type="number" id="ralValue" value="1027">
+            <button class="actionButton" id="ral" onclick="CreoJS.assignRALColor(document.getElementById('ralValue').value)">RAL</button>
+        </div>
+    </div>
+    <div class="section-label">Favoris RAL</div>
+    <div class="flex-center" style="padding: 0 var(--page-padding) 16px;">
+        <div id="ral-palette" class="ral-palette-grid">
+        </div>
+    </div>
+</div>
+<div id="info">
+</div>
+<script>
+    const parameterMappings = {
+            'fullname':   'name',
+            'modelType':  'modelType',
+            'DS1':        'DS1',
+            'DS2':        'DS2',
+            'DS3':        'DS3',
+            'Indice':     'Indice',
+            'Indice_min': 'Indice_min',
+            'protection': 'protection',
+            'Tol_gen':    'Tol_gen'
+        };
+
+function fillTable(infos) {
+    try {
+        const infosObj = Object.fromEntries(infos.map(item => [item.name, item.value]));
+        const type = infosObj.modelType; 
+
+        // --- GESTION DE L'ICÔNE ---
+        const iconElement = document.getElementById('modelIcon');
+        if (iconElement) {
+            if (type === "3D") {
+                iconElement.innerHTML = "view_in_ar"; // Icône cube 3D
+                iconElement.style.color = "#34a853";  // Optionnel : Vert pour le 3D
+            } else if (type === "2D") {
+                iconElement.innerHTML = "description"; // Icône feuille de plan
+                iconElement.style.color = "#4285f4";  // Optionnel : Bleu pour le 2D
+            } else {
+                iconElement.innerHTML = "question_mark";
+                iconElement.style.color = "#5f6368";
+            }
+        }
+
+        // --- REMPLISSAGE DU RESTE ---
+        Object.entries(parameterMappings).forEach(([paramName, elementId]) => {
+            const value = infosObj[paramName];
+            const input = document.getElementById(elementId);
+            if (!input) return;
+
+            if (elementId === 'name') {
+                input.value = (value || 'no model').trim().toUpperCase();
+            } else {
+                input.value = (value === '' || value === undefined) ? '/' : value;
+            }
+        });
+
+        // --- GESTION DES BOUTONS 2D / PDF (dépend de la disponibilité du dessin) ---
+        updateDrawingActionButtons(infosObj.isDrawing === true, infosObj.hasDrawing === true);
+    } catch (error) {
+        console.error('Erreur fillTable:', error);
+    }
+}
+
+function handleUppercase() {
+            const dsValues = ['DS1', 'DS2', 'DS3'].map(id => document.getElementById(id).value);
+            CreoJS.uppercase(...dsValues)
+                .then(() => window.location.reload())
+                .catch(error => console.error('Uppercase error:', error));
+        }
+document.addEventListener('DOMContentLoaded', generateRalPalette);
+        function initialize() {
+            CreoJS.getModelInfos()
+                .then(fillTable)
+                .catch(error => {
+                    const errorInfos = Object.fromEntries(
+                        Object.keys(parameterMappings).map(key => [key, 'Error'])
+                    );
+                    fillTable(errorInfos);
+                });
+            
+        }
+
+        function handleExport(type) {
+            const fullName = document.getElementById('name').value.trim();
+            const indice = document.getElementById('Indice').value.trim();
+            const indice_min = document.getElementById('Indice_min').value.trim();
+            if (type === 'pdf') { CreoJS.ExportPdf(fullName, indice, indice_min); return; }
+            if (type === 'step') { CreoJS.ExportStep(fullName, indice, indice_min); return; }
+        }
+function normalizeNFD (inputString) {
+    let outputString = inputString.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    outputString = outputString.toUpperCase();
+    return outputString;
+    
+}
+</script>
+</body>
+</html>

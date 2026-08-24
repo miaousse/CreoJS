@@ -1,0 +1,359 @@
+const CONSTANTS = {
+    NORMAL_TEXT: pfcParamMode.DWGTABLE_NORMAL,
+    FULL_TEXT: pfcParamMode.DWGTABLE_FULL,
+    MOD_TABLE_IND: 'Ind.',
+    MOD_TABLE_MOD: 'Modification',
+    COLUMN_COUNT: 5,
+    PARAM_DRAWER: 'DESSINATEUR',
+    PARAM_MODIFICATEUR: 'MODIFICATEUR',
+    PARAM_VERIFICATEUR: 'VERIFICATEUR',
+    PARAM_VERSION: 'VERSION',
+    PARAM_REVISION: 'REVISION'
+};
+
+const USERS = [{
+        name: 'Benjamin Godfrin',
+        visiativ: 'bgodfrin',
+        trigram: 'BGN'
+    },
+    {
+        name: 'Bruno Laon',
+        visiativ: 'blaon',
+        trigram: 'BLA'
+    },
+    {
+        name: 'Fabian Lobato',
+        visiativ: 'flobato',
+        trigram: 'FLO'
+    },
+    {
+        name: 'Guillaume Pluvinage',
+        visiativ: 'gpluvinage',
+        trigram: 'GPL'
+    },
+    {
+        name: 'Giovanny Menie',
+        visiativ: 'gme',
+        trigram: 'GME'
+    },
+    {
+        name: 'Jean-Baptiste Perrier',
+        visiativ: 'jbperrier',
+        trigram: 'JBP'
+    },
+    {
+        name: 'Jean-Raymond Civetta',
+        visiativ: 'jrcivetta',
+        trigram: 'JCA'
+    },
+    {
+        name: 'Jean-Luc Pielawski',
+        visiativ: 'jlpielawski',
+        trigram: 'JPI'
+    },
+    {
+        name: 'Loïc Carrel',
+        visiativ: 'lcarrel',
+        trigram: 'LCA'
+    },
+    {
+        name: 'Laurent Ibanez',
+        visiativ: 'libanez',
+        trigram: 'LIB'
+    },
+    {
+        name: 'Noa Lachal',
+        visiativ: 'nlachal',
+        trigram: 'NLA'
+    },
+    {
+        name: 'Romain Ferrando',
+        visiativ: 'rferrando',
+        trigram: 'RFE'
+    },
+    {
+        name: 'Semih Erbek',
+        visiativ: 'serbek',
+        trigram: 'SEK'
+    },
+    {
+        name: 'Victor Zovi',
+        visiativ: 'vzovi',
+        trigram: 'VZO'
+    },
+];
+
+
+const session = pfcGetCurrentSession();
+const currentModel = session.CurrentModel;
+
+function retrieveModsTableData() {
+    if (!currentModel) {
+        Browser.alert('aucun model actif');
+        return;
+    }
+    if (currentModel.Type !== pfcModelType.MDL_DRAWING) {
+        Browser.alert('le model actuel doit être un dessin');
+        return;
+    }
+
+    const tables = currentModel.ListTables();
+
+    const modelRev = GetActiveModelRevision(currentModel, CONSTANTS);
+    const drawer = GetTrigram(GetParamValue(currentModel, CONSTANTS.PARAM_DRAWER) ?? '');
+    //print(`${modelRev} dessiné par ${drawer}`);
+    let modsTable;
+    tables.forEach(table => {
+        // filter: exact column count
+        if (table.GetColumnCount() !== CONSTANTS.COLUMN_COUNT) return;
+
+        // filter: first cell must exactly equal one of the markers (use FULL_TEXT or NORMAL_TEXT per your choice)
+        const firstCellArr = table.GetText(pfcTableCell.Create(1, 1), CONSTANTS.NORMAL_TEXT);
+        const firstCell = (firstCellArr && firstCellArr[0]) ? firstCellArr[0] : '';
+        if (firstCell === CONSTANTS.MOD_TABLE_IND || firstCell === CONSTANTS.MOD_TABLE_MOD) {
+            try {
+                modsTable = processTable(table, CONSTANTS); // now only called for matching tables
+            } catch (e) {
+                Browser.alert(`error processing table: ${e}`);
+            }
+        }
+    });
+    //Browser.alert(modsTable ? `Table found with ${modsTable.length} entries` : 'No matching table found');
+    const result = ensureNewRevision(modsTable, modelRev, drawer);
+    session.RunMacro('~ Command `ProCmdDwgTblRegUpd`');
+    // modsTable.push(result.newRow);
+    return modsTable;
+
+}
+
+
+/* -------- helpers -------- */
+function processTable(table, CONSTANTS) {
+    const ROW_COUNT = table.GetRowCount();
+    const COLUMN_COUNT = table.GetColumnCount();
+
+    const firstCellContent = table.GetText(pfcTableCell.Create(1, 1), CONSTANTS.NORMAL_TEXT)[0] || '';
+    if (!firstCellContent.includes(CONSTANTS.MOD_TABLE_IND) && !firstCellContent.includes(CONSTANTS.MOD_TABLE_MOD)) {
+        return null;
+    }
+
+    const isLeftToRight = firstCellContent.includes(CONSTANTS.MOD_TABLE_IND);
+    const columnOrder = isLeftToRight ? [1, 2, 3, 4, 5] : [5, 4, 3, 2, 1];
+    const topArray = [];
+
+    for (let row = 2; row <= ROW_COUNT; row++) {
+        const tableLine = {
+            ind: '',
+            mod: '',
+            ver: '',
+            date: '',
+            desc: ''
+        };
+
+        columnOrder.forEach((col, idx) => {
+            if (col > COLUMN_COUNT) return;
+
+            // On récupère la valeur. Si c'est vide ou nul, on met une chaîne vide.
+            const val = table.GetText(pfcTableCell.Create(row, col), CONSTANTS.NORMAL_TEXT) || "";
+            const cleanVal = String(val).trim();
+
+            switch (idx) {
+                case 0:
+                    tableLine.ind = cleanVal;
+                    break;
+                case 1:
+                    tableLine.mod = cleanVal;
+                    break;
+                case 2:
+                    tableLine.ver = cleanVal;
+                    break;
+                case 3:
+                    tableLine.date = cleanVal;
+                    break;
+                case 4:
+                    tableLine.desc = cleanVal;
+                    break;
+            }
+        });
+        topArray.push(tableLine);
+    }
+    return topArray;
+}
+
+
+function updateRevisionTable( /* keep signature for future use */ ) {
+    // intentionally empty for now; implement when needed
+}
+
+/* Param helpers */
+
+function GetParamValue(model, name) {
+    const param = model.GetParam(name);
+    if (!param) return null;
+    return GetValue(param);
+}
+
+function GetValue(parameter) {
+    const valueDiscr = parameter.Value.discr;
+    const valueType = {
+        [pfcParamValueType.PARAM_STRING]: 'StringValue',
+        [pfcParamValueType.PARAM_INTEGER]: 'IntValue',
+        [pfcParamValueType.PARAM_BOOLEAN]: 'BoolValue',
+        [pfcParamValueType.PARAM_DOUBLE]: 'DoubleValue'
+    };
+
+    if (valueDiscr === pfcParamValueType.PARAM_INTEGER) {
+        const intValue = parameter.Value.IntValue;
+        return (intValue != null) ? intValue.toString() : '';
+    }
+
+    const key = valueType[valueDiscr];
+    return (key && parameter.Value[key] != null) ? parameter.Value[key] : '';
+}
+
+function GetActiveModelRevision(model, CONSTANTS) {
+    const major = GetParamValue(model, CONSTANTS.PARAM_VERSION) ?? '';
+    const minor = GetParamValue(model, CONSTANTS.PARAM_REVISION) ?? '';
+    return `${major}${minor}`;
+}
+
+function GetTrigram(login) {
+
+
+    if (typeof login !== 'string' || login.length === 0) return '???';
+
+    const cleanLogin = login.trim().toLowerCase();
+
+    // On cherche l'objet dont le champ 'visiativ' correspond au login
+    const user = USERS.find(u => u.visiativ === cleanLogin);
+
+    // Si on a trouvé, on renvoie le trigramme, sinon le login tel quel ou '???'
+    return user ? user.trigram : '???';
+}
+
+// Compare revisions like "A0", "A12", "B0" — returns -1 if a<b, 0 if equal, 1 if a>b
+function compareRevisions(a, b) {
+    if (!a) return b ? -1 : 0;
+    if (!b) return 1;
+    // Split letter prefix and numeric suffix
+    const mA = a.match(/^([A-Za-z]+)(\d+)$/);
+    const mB = b.match(/^([A-Za-z]+)(\d+)$/);
+    if (!mA || !mB) return a === b ? 0 : (a < b ? -1 : 1);
+    const letterA = mA[1].toUpperCase();
+    const numA = parseInt(mA[2], 10);
+    const letterB = mB[1].toUpperCase();
+    const numB = parseInt(mB[2], 10);
+    if (letterA < letterB) return -1;
+    if (letterA > letterB) return 1;
+    return numA === numB ? 0 : (numA < numB ? -1 : 1);
+}
+
+function ensureNewRevision(rows, modelRev, drawer) {
+    if (!Array.isArray(rows)) rows = [];
+
+    // find highest ind
+    let max = null;
+    for (const r of rows) {
+        const ind = (r && r.ind) ? String(r.ind).trim() : '';
+        if (!ind) continue;
+        if (max === null || compareRevisions(ind, max) === 1) max = ind;
+    }
+
+    // if modelRev greater than max, push new entry
+    if (compareRevisions(modelRev, max) === 1) {
+        const newRow = {
+            ind: modelRev,
+            mod: drawer,
+            ver: '',
+            date: new Date().toLocaleDateString('fr-FR'),
+            desc: ''
+        };
+        rows.push(newRow);
+        return {
+            added: true,
+            newRow
+        };
+    }
+
+    return {
+        added: false,
+        max
+    };
+}
+
+
+function updateRevisionTableInCreo(data) {
+    //const session = pfcGetCurrentSession();
+    //const currentModel = session.CurrentModel;
+    const tables = currentModel.ListTables();
+
+    // 1. Retrouver la table (même logique que pour la lecture)
+    let targetTable = null;
+    tables.forEach(table => {
+        // filter: exact column count
+        if (table.GetColumnCount() !== CONSTANTS.COLUMN_COUNT) return;
+
+        // filter: first cell must exactly equal one of the markers (use FULL_TEXT or NORMAL_TEXT per your choice)
+        const firstCellArr = table.GetText(pfcTableCell.Create(1, 1), CONSTANTS.NORMAL_TEXT);
+        const firstCell = (firstCellArr && firstCellArr[0]) ? firstCellArr[0] : '';
+        if (firstCell === CONSTANTS.MOD_TABLE_IND || firstCell === CONSTANTS.MOD_TABLE_MOD) {
+            try {
+                targetTable = table
+            } catch (e) {
+                Browser.alert(`error processing table: ${e}`);
+            }
+        }
+    });
+    if (!targetTable) return "Table non trouvée.";
+
+    // 2. Gérer le nombre de lignes
+    // Si l'utilisateur a ajouté une ligne en HTML, il faut l'ajouter dans Creo
+    let creoRowCount = targetTable.GetRowCount();
+    let htmlRowCount = data.length;
+
+    // Si on a plus de lignes en HTML qu'en Creo (ajout d'une révision)
+    while (creoRowCount < htmlRowCount + 1) {
+        // On insère une ligne en bas (0.7 est un ratio de hauteur standard)
+        targetTable.InsertRow(0.7, creoRowCount, true);
+        creoRowCount++;
+    }
+
+    // 3. Remplir les données
+    // On définit l'ordre des colonnes (à adapter selon ton sens de lecture)
+    const firstCellArr = targetTable.GetText(pfcTableCell.Create(1, 1), CONSTANTS.NORMAL_TEXT);
+    const firstCell = (firstCellArr && firstCellArr[0]) ? firstCellArr[0] : '';
+    const firstCellContent = targetTable.GetText(pfcTableCell.Create(1, 1), CONSTANTS.NORMAL_TEXT)[0] || '';
+    if (!firstCellContent.includes(CONSTANTS.MOD_TABLE_IND) && !firstCellContent.includes(CONSTANTS.MOD_TABLE_MOD)) {
+        return null;
+    }
+    const isLeftToRight = firstCellContent.includes(CONSTANTS.MOD_TABLE_IND);
+    const columnOrder = isLeftToRight ? [1, 2, 3, 4, 5] : [5, 4, 3, 2, 1];
+
+    data.forEach((row, index) => {
+        const creoRowIndex = index + 2; // Les tables Creo commencent à 1
+        // Browser.alert(`Updating row ${creoRowIndex}`);
+        row.desc = row.desc.normalize("NFD").replace(/[\u0300-\u036f]/g, "") || '';
+        // Browser.alert(`Updating row ${creoRowIndex} with desc: ${row.desc}`);
+        targetTable.SetText(pfcTableCell.Create(creoRowIndex, columnOrder[0]), [row.ind]);
+        targetTable.SetText(pfcTableCell.Create(creoRowIndex, columnOrder[1]), [row.mod.toUpperCase()]);
+        targetTable.SetText(pfcTableCell.Create(creoRowIndex, columnOrder[2]), [row.ver.toUpperCase()]);
+        targetTable.SetText(pfcTableCell.Create(creoRowIndex, columnOrder[3]), [row.date]);
+        targetTable.SetText(pfcTableCell.Create(creoRowIndex, columnOrder[4]), [row.desc.toUpperCase()]);
+    });
+
+    // Optionnel : forcer la régénération pour voir le texte
+    currentModel.Regenerate();
+    //session.Repaint();
+
+    return "Table mise à jour avec succès !";
+}
+
+function getLastIndFromCreo(table, columnOrder) {
+    const rowCount = table.GetRowCount();
+    for (let r = rowCount; r >= 2; r--) {
+        const val = table.GetText(pfcTableCell.Create(r, columnOrder[0]), CONSTANTS.NORMAL_TEXT);
+        const clean = String(val || '').trim();
+        if (clean) return clean;
+    }
+    return '';
+}

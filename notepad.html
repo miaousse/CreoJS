@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mes Notes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <script src="./js/mainNavbarButtons.js"></script>
+    <script src="./js/MainNavbarGenerator.js"></script>
+    
+    <link rel="stylesheet" href="./css/main.css">
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+<body>
+    <nav id="main-navbar" class="navbar"></nav>
+
+
+    <div class="info-item">
+        <!-- Formulaire saisie -->
+        <div class="notepad-form">
+            <input type="text" id="title-input" placeholder="Titre de la note" autofocus required>
+            <textarea id="note-input" placeholder="Entrer la note ici..." required></textarea>
+            <div>
+                <button id="save-note" class="action-icon-btn btn-save" title="Sauver la note">
+                    <span class="material-symbols-outlined">note_add</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Liste des notes -->
+        <p class="section-label">Notes sauvées</p>
+        <table id="notes-table">
+            <thead>
+                <tr>
+                    <th style="width:64px"></th>
+                    <th>Titre</th>
+                </tr>
+            </thead>
+            <tbody id="notes-list"></tbody>
+        </table>
+
+        <!-- Prévisualisation -->
+        <div id="note-display" class="hidden">
+            <pre id="displayed-note-content"></pre>
+            <button id="close-note" class="action-icon-btn" title="Fermer">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="./js/notepad.js"></script>
+</body>
+</html>
